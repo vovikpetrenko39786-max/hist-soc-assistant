@@ -1,0 +1,374 @@
+[
+  {
+    "curriculum": "HISTORY_6_BASIC_2026_27",
+    "subject": "HISTORY",
+    "grade": 6,
+    "level": "basic",
+    "unit": "Всеобщая история. История Средних веков",
+    "topic": {
+      "title": "Крестовые походы",
+      "hours": null,
+      "aliases": [],
+      "topic_type": "new_content",
+      "concepts": [
+        {
+          "term": "Крестовые походы",
+          "importance": "required"
+        },
+        {
+          "term": "крестоносцы",
+          "importance": "required"
+        }
+      ],
+      "skills": [
+        "establish_causality",
+        "identify",
+        "compare",
+        "analyze_source",
+        "analyze_map",
+        "explain"
+      ],
+      "outcomes": [
+        {
+          "type": "subject",
+          "subtype": "historical_knowledge",
+          "text": "характеризовать ключевые события, процессы и участников по теме «Крестовые походы», используя исторические понятия и факты"
+        },
+        {
+          "type": "subject",
+          "subtype": "causality",
+          "text": "устанавливать причинно-следственные связи и объяснять историческое значение процессов по теме «Крестовые походы»"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "cognitive",
+          "text": "сопоставлять информацию из разных источников, устанавливать существенные признаки, сходства, различия и причинно-следственные связи"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "communicative",
+          "text": "формулировать исторически обоснованные суждения, аргументировать вывод и участвовать в обсуждении"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "regulatory",
+          "text": "планировать учебное действие, контролировать промежуточный результат и проводить содержательную рефлексию"
+        }
+      ],
+      "default_lesson_blueprint": {
+        "sequence": [
+          "problem_or_source",
+          "chronology_and_context",
+          "causes",
+          "events_and_actors",
+          "consequences",
+          "source_or_map_practice",
+          "conclusion",
+          "reflection"
+        ],
+        "recommended_activities": [
+          "timeline",
+          "source_analysis",
+          "map_work",
+          "causality_chain",
+          "historical_comparison"
+        ]
+      },
+      "typical_misconceptions": [
+        "Смешение причины, повода и последствия события",
+        "Нарушение хронологии или перенос реалий другой эпохи"
+      ],
+      "essential_questions": [
+        "Какие причины, ключевые события и последствия определяют место темы «Крестовые походы» в историческом процессе?"
+      ],
+      "reflection_patterns": [
+        "return_to_goal",
+        "error_reflection",
+        "exit_ticket"
+      ],
+      "assessment_skills": [
+        "establish_causality",
+        "identify",
+        "compare",
+        "analyze_source"
+      ],
+      "difficulty_level": 3,
+      "abstraction_level": 2,
+      "common_examples": [],
+      "counterexamples": [],
+      "interdisciplinary_links": [
+        {
+          "related_subject": "GEOGRAPHY",
+          "related_topic": null,
+          "link_type": "map_and_space",
+          "description": "Работа с пространственным контекстом, исторической картой и изменением территорий",
+          "strength": "useful"
+        }
+      ],
+      "exam_links": []
+    }
+  },
+  {
+    "curriculum": "HISTORY_11_BASIC_2026_27",
+    "subject": "HISTORY",
+    "grade": 11,
+    "level": "basic",
+    "unit": "Всеобщая история. 1945 год — начало XXI века",
+    "topic": {
+      "title": "Холодная война и международные отношения",
+      "hours": null,
+      "aliases": [],
+      "topic_type": "new_content",
+      "concepts": [
+        {
+          "term": "Холодная война",
+          "importance": "required"
+        },
+        {
+          "term": "биполярный мир",
+          "importance": "required"
+        },
+        {
+          "term": "гонка вооружений",
+          "importance": "required"
+        }
+      ],
+      "skills": [
+        "establish_causality",
+        "identify",
+        "compare",
+        "analyze_source",
+        "analyze_map",
+        "explain"
+      ],
+      "outcomes": [
+        {
+          "type": "subject",
+          "subtype": "historical_knowledge",
+          "text": "характеризовать ключевые события, процессы и участников по теме «Холодная война и международные отношения», используя исторические понятия и факты"
+        },
+        {
+          "type": "subject",
+          "subtype": "causality",
+          "text": "устанавливать причинно-следственные связи и объяснять историческое значение процессов по теме «Холодная война и международные отношения»"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "cognitive",
+          "text": "сопоставлять информацию из разных источников, устанавливать существенные признаки, сходства, различия и причинно-следственные связи"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "communicative",
+          "text": "формулировать исторически обоснованные суждения, аргументировать вывод и участвовать в обсуждении"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "regulatory",
+          "text": "планировать учебное действие, контролировать промежуточный результат и проводить содержательную рефлексию"
+        }
+      ],
+      "default_lesson_blueprint": {
+        "sequence": [
+          "problem_or_source",
+          "chronology_and_context",
+          "causes",
+          "events_and_actors",
+          "consequences",
+          "source_or_map_practice",
+          "conclusion",
+          "reflection"
+        ],
+        "recommended_activities": [
+          "timeline",
+          "source_analysis",
+          "map_work",
+          "causality_chain",
+          "historical_comparison"
+        ]
+      },
+      "typical_misconceptions": [
+        "Смешение причины, повода и последствия события",
+        "Нарушение хронологии или перенос реалий другой эпохи"
+      ],
+      "essential_questions": [
+        "Какие причины, ключевые события и последствия определяют место темы «Холодная война и международные отношения» в историческом процессе?"
+      ],
+      "reflection_patterns": [
+        "return_to_goal",
+        "error_reflection",
+        "exit_ticket"
+      ],
+      "assessment_skills": [
+        "establish_causality",
+        "identify",
+        "compare",
+        "analyze_source"
+      ],
+      "difficulty_level": 4,
+      "abstraction_level": 3,
+      "common_examples": [],
+      "counterexamples": [],
+      "interdisciplinary_links": [
+        {
+          "related_subject": "GEOGRAPHY",
+          "related_topic": null,
+          "link_type": "map_and_space",
+          "description": "Работа с пространственным контекстом, исторической картой и изменением территорий",
+          "strength": "useful"
+        }
+      ],
+      "exam_links": [
+        {
+          "exam": "EGE_HISTORY",
+          "exam_year": 2027,
+          "exam_section": null,
+          "task_types": [],
+          "codifier_reference": null,
+          "importance": "normal",
+          "mapping_level": "general_topic",
+          "source_key": "FIPI_EGE_2027_PROJECTS"
+        }
+      ]
+    }
+  },
+  {
+    "curriculum": "SOCIAL_11_ADV_2026_27",
+    "subject": "SOCIAL_STUDIES",
+    "grade": 11,
+    "level": "advanced",
+    "unit": "Введение в социологию",
+    "topic": {
+      "title": "Социальные институты: семья, образование, религия, СМИ",
+      "hours": 6,
+      "aliases": [],
+      "topic_type": "new_content",
+      "concepts": [
+        {
+          "term": "социальный институт",
+          "importance": "required"
+        },
+        {
+          "term": "институционализация",
+          "importance": "required"
+        },
+        {
+          "term": "функции социального института",
+          "importance": "required"
+        },
+        {
+          "term": "религия",
+          "importance": "required"
+        },
+        {
+          "term": "свобода совести",
+          "importance": "required"
+        },
+        {
+          "term": "образование",
+          "importance": "required"
+        },
+        {
+          "term": "образовательная система",
+          "importance": "required"
+        }
+      ],
+      "skills": [
+        "identify",
+        "classify",
+        "explain",
+        "apply_concept",
+        "give_example",
+        "argue"
+      ],
+      "outcomes": [
+        {
+          "type": "subject",
+          "subtype": "conceptual",
+          "text": "раскрывать смысл ключевых понятий и характеризовать общественные явления по теме «Социальные институты: семья, образование, религия, СМИ»"
+        },
+        {
+          "type": "subject",
+          "subtype": "application",
+          "text": "применять обществоведческие знания по теме «Социальные институты: семья, образование, религия, СМИ» к анализу конкретных социальных ситуаций и примеров"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "cognitive",
+          "text": "анализировать, классифицировать и сопоставлять социальную информацию, устанавливать причинно-следственные связи"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "communicative",
+          "text": "формулировать и аргументировать позицию, корректно обсуждать альтернативные суждения и представлять вывод"
+        },
+        {
+          "type": "metasubject",
+          "subtype": "regulatory",
+          "text": "определять учебную задачу, выбирать способ действия, контролировать результат и оценивать степень достижения цели"
+        }
+      ],
+      "default_lesson_blueprint": {
+        "sequence": [
+          "problem_case",
+          "concepts_and_features",
+          "examples_and_counterexamples",
+          "application_case",
+          "explanation_and_argument",
+          "structure",
+          "reflection"
+        ],
+        "recommended_activities": [
+          "case_analysis",
+          "concept_sort",
+          "example_counterexample",
+          "mini_debate",
+          "source_or_data_analysis"
+        ]
+      },
+      "typical_misconceptions": [
+        "Подмена понятия бытовым представлением",
+        "Пример повторяет определение и не содержит конкретной социальной ситуации"
+      ],
+      "essential_questions": [
+        "Как содержание темы «Социальные институты: семья, образование, религия, СМИ» помогает объяснять реальные общественные процессы и принимать обоснованные решения?"
+      ],
+      "reflection_patterns": [
+        "return_to_goal",
+        "error_reflection",
+        "exit_ticket"
+      ],
+      "assessment_skills": [
+        "identify",
+        "classify",
+        "explain",
+        "apply_concept"
+      ],
+      "difficulty_level": 4,
+      "abstraction_level": 4,
+      "common_examples": [],
+      "counterexamples": [],
+      "interdisciplinary_links": [
+        {
+          "related_subject": "INFORMATICS",
+          "related_topic": null,
+          "link_type": "information_literacy",
+          "description": "Критическая оценка цифровой информации и безопасная работа с информационной средой",
+          "strength": "strong"
+        }
+      ],
+      "exam_links": [
+        {
+          "exam": "EGE_SOCIAL_STUDIES",
+          "exam_year": 2027,
+          "exam_section": null,
+          "task_types": [],
+          "codifier_reference": null,
+          "importance": "normal",
+          "mapping_level": "general_topic",
+          "source_key": "FIPI_EGE_2027_PROJECTS"
+        }
+      ]
+    }
+  }
+]

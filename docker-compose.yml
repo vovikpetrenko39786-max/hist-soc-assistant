@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: teacher_assistant
+      POSTGRES_USER: teacher
+      POSTGRES_PASSWORD: teacher
+    ports:
+      - "5432:5432"
+    volumes:
+      - teacher_assistant_pg:/var/lib/postgresql/data
+
+volumes:
+  teacher_assistant_pg:

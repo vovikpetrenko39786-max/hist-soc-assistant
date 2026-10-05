@@ -1,0 +1,1162 @@
+{
+  "dataset": "official_curriculum_seed_2026_2027",
+  "dataset_version": "0.3.0",
+  "academic_year": "2026/2027",
+  "scope": "Universal curriculum catalog; no teacher-specific data",
+  "notes": [
+    "Обществознание ООО в актуальной структуре 2026/27 представлено 9 классом.",
+    "Детализированные темы и часы загружены для обществознания 9 класса и базового обществознания 10–11 классов.",
+    "История 5–11 и углублённое обществознание 10–11 на первом проходе представлены официальным каркасом; детализация идёт следующими импортами.",
+    "Review status 'reviewed' означает: структура курса перенесена из официальной ФРП; до статуса 'verified' ещё должны быть импортированы и проверены планируемые результаты, понятия и детальные source bindings."
+  ],
+  "sources": [
+    {
+      "key": "HISTORY_5_9_2025",
+      "title": "Федеральная рабочая программа основного общего образования. История. 5–9 классы",
+      "subject": "HISTORY",
+      "year": 2025,
+      "source_type": "official_document",
+      "status": "official",
+      "origin": "official",
+      "access_status": "official_open",
+      "url": "https://edsoo.ru/wp-content/uploads/2025/07/2025_ooo_frp_istoriya_5-9.pdf",
+      "coverage": "official_full_pdf"
+    },
+    {
+      "key": "SOCIAL_9_2026",
+      "title": "Федеральная рабочая программа основного общего образования. Обществознание. 9 класс",
+      "subject": "SOCIAL_STUDIES",
+      "year": 2026,
+      "source_type": "official_document",
+      "status": "official",
+      "origin": "official",
+      "access_status": "official_open",
+      "url": "https://edsoo.ru/wp-content/uploads/2026/09/frp-_obshhestvoznanie_ooo_baza_itog-1.pdf",
+      "coverage": "official_full_pdf"
+    },
+    {
+      "key": "HISTORY_10_11_BASE_2025",
+      "title": "Федеральная рабочая программа среднего общего образования. История. 10–11 классы. Базовый уровень",
+      "subject": "HISTORY",
+      "year": 2025,
+      "source_type": "official_document",
+      "status": "official",
+      "origin": "official",
+      "access_status": "official_open",
+      "url": "https://edsoo.ru/wp-content/uploads/2025/07/2025_soo_frp_istoriya_10_11_baza.pdf",
+      "coverage": "official_full_pdf"
+    },
+    {
+      "key": "SOCIAL_10_11_BASE_2026",
+      "title": "Федеральная рабочая программа среднего общего образования. Обществознание. 10–11 классы. Базовый уровень",
+      "subject": "SOCIAL_STUDIES",
+      "year": 2026,
+      "source_type": "official_document",
+      "status": "official",
+      "origin": "official",
+      "access_status": "official_open",
+      "url": "https://edsoo.ru/wp-content/uploads/2026/09/frp-_obshhestvoznanie_soo_itog.pdf",
+      "coverage": "official_full_pdf"
+    },
+    {
+      "key": "SOCIAL_10_11_ADV_2025",
+      "title": "Федеральная рабочая программа среднего общего образования. Обществознание. 10–11 классы. Углублённый уровень",
+      "subject": "SOCIAL_STUDIES",
+      "year": 2025,
+      "source_type": "official_document",
+      "status": "official",
+      "origin": "official",
+      "access_status": "official_open",
+      "url": "https://edsoo.ru/wp-content/uploads/2025/07/2025_soo_frp_obshhestvoznanie_10_11_ugl.pdf",
+      "coverage": "official_full_pdf"
+    }
+  ],
+  "curricula": [
+    {
+      "key": "HISTORY_5_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 5,
+      "level": "basic",
+      "title": "История. 5 класс",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_5_9_2025",
+      "coverage": "partial_detail",
+      "total_hours": 102,
+      "units": [
+        {
+          "title": "Всеобщая история. История Древнего мира",
+          "hours": 68,
+          "topics": [
+            {
+              "title": "Что изучает история",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Первобытное общество",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Древний Восток",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Древняя Греция. Эллинизм",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Древний Рим",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Наследие цивилизаций Древнего мира",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История нашего края",
+          "hours": 34,
+          "topics": [
+            {
+              "title": "История нашего края",
+              "hours": 34,
+              "aliases": [],
+              "topic_type": "regional_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_6_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 6,
+      "level": "basic",
+      "title": "История. 6 класс",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_5_9_2025",
+      "coverage": "skeleton",
+      "total_hours": 102,
+      "units": [
+        {
+          "title": "Всеобщая история. История Средних веков",
+          "hours": 28,
+          "topics": [
+            {
+              "title": "История Средних веков",
+              "hours": 28,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История России. От Руси к Российскому государству",
+          "hours": 57,
+          "topics": [
+            {
+              "title": "От Руси к Российскому государству",
+              "hours": 57,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История нашего края",
+          "hours": 17,
+          "topics": [
+            {
+              "title": "История нашего края",
+              "hours": 17,
+              "aliases": [],
+              "topic_type": "regional_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_7_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 7,
+      "level": "basic",
+      "title": "История. 7 класс",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_5_9_2025",
+      "coverage": "skeleton",
+      "total_hours": 102,
+      "units": [
+        {
+          "title": "Всеобщая история. История Нового времени. Конец XV–XVII век",
+          "hours": 28,
+          "topics": [
+            {
+              "title": "История Нового времени. Конец XV–XVII век",
+              "hours": 28,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История России XVI–XVII веков. От великого княжества к царству",
+          "hours": 57,
+          "topics": [
+            {
+              "title": "Россия XVI–XVII веков: от великого княжества к царству",
+              "hours": 57,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История нашего края",
+          "hours": 17,
+          "topics": [
+            {
+              "title": "История нашего края",
+              "hours": 17,
+              "aliases": [],
+              "topic_type": "regional_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_8_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 8,
+      "level": "basic",
+      "title": "История. 8 класс",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_5_9_2025",
+      "coverage": "skeleton",
+      "total_hours": 102,
+      "units": [
+        {
+          "title": "Всеобщая история. История Нового времени. XVIII — начало XIX века",
+          "hours": 34,
+          "topics": [
+            {
+              "title": "История Нового времени. XVIII — начало XIX века",
+              "hours": 34,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История России XVIII — начала XIX века. От царства к империи",
+          "hours": 68,
+          "topics": [
+            {
+              "title": "Россия XVIII — начала XIX века: от царства к империи",
+              "hours": 68,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_9_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 9,
+      "level": "basic",
+      "title": "История. 9 класс",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_5_9_2025",
+      "coverage": "skeleton",
+      "total_hours": 68,
+      "units": [
+        {
+          "title": "Всеобщая история. История Нового времени. XIX — начало XX века",
+          "hours": 23,
+          "topics": [
+            {
+              "title": "История Нового времени. XIX — начало XX века",
+              "hours": 23,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        },
+        {
+          "title": "История России XIX — начала XX века",
+          "hours": 45,
+          "topics": [
+            {
+              "title": "Россия XIX — начала XX века",
+              "hours": 45,
+              "aliases": [],
+              "topic_type": "new_content"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_10_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 10,
+      "level": "basic",
+      "title": "История. 10 класс. Базовый уровень",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_10_11_BASE_2025",
+      "coverage": "skeleton",
+      "total_hours": 68,
+      "units": [
+        {
+          "title": "Всеобщая история. 1914–1945 годы",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Всеобщая история. 1914–1945 годы",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "История России. 1914–1945 годы",
+          "hours": null,
+          "topics": [
+            {
+              "title": "История России. 1914–1945 годы",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "HISTORY_11_BASIC_2026_27",
+      "subject": "HISTORY",
+      "grade": 11,
+      "level": "basic",
+      "title": "История. 11 класс. Базовый уровень",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "HISTORY_10_11_BASE_2025",
+      "coverage": "skeleton",
+      "total_hours": 68,
+      "units": [
+        {
+          "title": "Всеобщая история. 1945 год — начало XXI века",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Всеобщая история. 1945 год — начало XXI века",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "История России. 1945 год — начало XXI века",
+          "hours": null,
+          "topics": [
+            {
+              "title": "История России. 1945 год — начало XXI века",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "SOCIAL_9_BASIC_2026_27",
+      "subject": "SOCIAL_STUDIES",
+      "grade": 9,
+      "level": "basic",
+      "title": "Обществознание. 9 класс",
+      "version": "2026-09/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "SOCIAL_9_2026",
+      "coverage": "detailed_topics_hours",
+      "total_hours": 34,
+      "units": [
+        {
+          "title": "Человек и общество",
+          "hours": 7,
+          "topics": [
+            {
+              "title": "Человек",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Как устроено общество",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Традиционные ценности российского общества",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Информационное пространство современного общества",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Человек и общество»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Государство и право",
+          "hours": 10,
+          "topics": [
+            {
+              "title": "Государство",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Основы организации государственной власти в России",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Цифровое государство",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Нормы и отрасли права. Правоотношения",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Правонарушения и юридическая ответственность",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Гражданин и гражданство",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Государство и право»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Культура",
+          "hours": 5,
+          "topics": [
+            {
+              "title": "Культура. Искусство",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Религия",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Образование",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Наука",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Культура»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Экономика",
+          "hours": 7,
+          "topics": [
+            {
+              "title": "Хозяйственная система",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Государство в экономике",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Семья в экономике",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Экономика»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Россия на пути в будущее",
+          "hours": 4,
+          "topics": [
+            {
+              "title": "Россия — страна возможностей: технологическое развитие и суверенитет",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Россия в многополярном мире",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Россия на пути в будущее»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Итоговое повторение",
+          "hours": 1,
+          "topics": [
+            {
+              "title": "Итоговое повторение курса",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "SOCIAL_10_BASIC_2026_27",
+      "subject": "SOCIAL_STUDIES",
+      "grade": 10,
+      "level": "basic",
+      "title": "Обществознание. 10 класс. Базовый уровень",
+      "version": "2026-09/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "SOCIAL_10_11_BASE_2026",
+      "coverage": "detailed_topics_hours",
+      "total_hours": 68,
+      "units": [
+        {
+          "title": "Человек и общество",
+          "hours": 13,
+          "topics": [
+            {
+              "title": "Сознание человека. Мировоззрение и ценности",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Мнение или знание? Способы познания окружающего мира",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Логика и её законы. Искусство спорить",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Деятельность человека как способ существования личности",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Общество как система. Человек в системе социальных взаимодействий",
+              "hours": 3,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающие уроки по разделу «Человек и общество»",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Культура. Искусство",
+          "hours": 12,
+          "topics": [
+            {
+              "title": "Государственная политика в сфере культуры",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Как музеи сохраняют историю",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Библиотеки и архивы",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Театр",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Музыка",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Кино",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающие уроки по разделу «Культура. Искусство»",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Экономическая жизнь общества",
+          "hours": 15,
+          "topics": [
+            {
+              "title": "Экономика как наука и хозяйство. Роль экономики в жизни общества",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Рыночный механизм",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Предпринимательская деятельность",
+              "hours": 3,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Банковская система. Финансовые услуги и страхование",
+              "hours": 3,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Современная российская экономика и денежно-кредитная политика Центрального банка",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающие уроки по разделу «Экономическая жизнь общества»",
+              "hours": 3,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Политическая жизнь общества",
+          "hours": 9,
+          "topics": [
+            {
+              "title": "Политическая система общества",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Политическая идеология",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Политические партии, общественно-политические организации и движения",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Избирательная система",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающие уроки по разделу «Политическая жизнь общества»",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Правовая система Российской Федерации",
+          "hours": 17,
+          "topics": [
+            {
+              "title": "Гражданское право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Семейное право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Трудовое право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Административное право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Экологическое право",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Финансовое право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Уголовное право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Процессуальное право",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающие уроки по разделу «Правовая система Российской Федерации»",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Итоговое повторение",
+          "hours": 2,
+          "topics": [
+            {
+              "title": "Итоговое повторение курса",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "SOCIAL_11_BASIC_2026_27",
+      "subject": "SOCIAL_STUDIES",
+      "grade": 11,
+      "level": "basic",
+      "title": "Обществознание. 11 класс. Базовый уровень",
+      "version": "2026-09/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "SOCIAL_10_11_BASE_2026",
+      "coverage": "detailed_topics_hours",
+      "total_hours": 34,
+      "units": [
+        {
+          "title": "Суверенитет",
+          "hours": 7,
+          "topics": [
+            {
+              "title": "Преемственность истории развития российской государственности",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Российская цивилизация",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Экономический суверенитет: производство и продовольствие",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Технологический и цифровой суверенитет",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Суверенитет»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Россия сегодня: государственные интересы и необходимость их защиты",
+          "hours": 10,
+          "topics": [
+            {
+              "title": "Российское общество сегодня",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Воинский долг",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Вооружённые силы России",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Военное образование в России",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Служба по контракту",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Росгвардия и МВД России",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Органы государственной безопасности",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Россия в глобальной экономике",
+          "hours": 5,
+          "topics": [
+            {
+              "title": "Принципы экономического развития России",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Современные проблемы устойчивого развития",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу «Россия в глобальной экономике»",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Формирование справедливого миропорядка в XXI веке",
+          "hours": 11,
+          "topics": [
+            {
+              "title": "История трансформации миропорядков: от Вестфальского мира и Венского конгресса до Лиги Наций",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Ялтинско-Потсдамская система послевоенного устройства мира",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "ООН: история и проблемы",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Биполярный мир и холодная война",
+              "hours": 2,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Однополярный мир и движение к многополярности. Что такое справедливый миропорядок",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Русский мир",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "new_content"
+            },
+            {
+              "title": "Повторительно-обобщающий урок по разделу",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        },
+        {
+          "title": "Итоговое повторение",
+          "hours": 1,
+          "topics": [
+            {
+              "title": "Итоговое повторение курса",
+              "hours": 1,
+              "aliases": [],
+              "topic_type": "review"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "SOCIAL_10_ADV_2026_27",
+      "subject": "SOCIAL_STUDIES",
+      "grade": 10,
+      "level": "advanced",
+      "title": "Обществознание. 10 класс. Углублённый уровень",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "SOCIAL_10_11_ADV_2025",
+      "coverage": "skeleton",
+      "total_hours": 136,
+      "units": [
+        {
+          "title": "Социальные науки и их особенности",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Социальные науки и их особенности",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "Введение в философию",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в философию",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "Введение в социальную психологию",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в социальную психологию",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "Введение в экономическую науку",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в экономическую науку",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "SOCIAL_11_ADV_2026_27",
+      "subject": "SOCIAL_STUDIES",
+      "grade": 11,
+      "level": "advanced",
+      "title": "Обществознание. 11 класс. Углублённый уровень",
+      "version": "2026-2027/current-FRP",
+      "status": "current",
+      "review_status": "reviewed",
+      "official_source": "SOCIAL_10_11_ADV_2025",
+      "coverage": "skeleton",
+      "total_hours": 136,
+      "units": [
+        {
+          "title": "Введение в социологию",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в социологию",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "Введение в политологию",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в политологию",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        },
+        {
+          "title": "Введение в правоведение",
+          "hours": null,
+          "topics": [
+            {
+              "title": "Введение в правоведение",
+              "hours": null,
+              "aliases": [],
+              "topic_type": "section_skeleton"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

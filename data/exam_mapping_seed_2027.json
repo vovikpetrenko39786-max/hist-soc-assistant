@@ -1,0 +1,1151 @@
+{
+  "dataset": "exam_mapping_seed_2027",
+  "dataset_version": "0.5",
+  "generated_for_date": "2026-10-05",
+  "scope": "Universal exam model catalog; no teacher-specific data",
+  "important_note": "2027 documents are projects as of 2026-10-05. Project/public-discussion status must not be presented as final approved exam model.",
+  "models": [
+    {
+      "model_key": "EGE_HISTORY_2027_PROJECT",
+      "exam": "EGE",
+      "subject": "HISTORY",
+      "year": 2027,
+      "status": "project",
+      "total_tasks": 22,
+      "max_primary_score": 43,
+      "source_url": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "change_source_url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_EGE_2027.pdf",
+      "notes": "Проект КИМ 2027. В сравнении с 2026: 22 задания, максимум 43; добавлена позиция 15 по источнику всеобщей истории; обновлены задания 20 и 22.",
+      "metadata": {
+        "verification": "official_2027_change_plan",
+        "public_discussion_deadline": "2026-09-30"
+      },
+      "resources": [
+        {
+          "resource_type": "project_bundle",
+          "title": "Проекты ЕГЭ-2027: история",
+          "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/is_11_2027.zip",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "change_plan",
+          "title": "Планируемые изменения в КИМ ЕГЭ 2027",
+          "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_EGE_2027.pdf",
+          "source_year": 2027,
+          "status": "official_project"
+        }
+      ],
+      "tasks": [
+        {
+          "task_key": "15",
+          "task_number": 15,
+          "title": "Работа с историческим источником по всеобщей истории",
+          "response_type": "project_model",
+          "max_score": null,
+          "skill_codes": [
+            "analyze_source"
+          ],
+          "verification_status": "confirmed_2027_project_change",
+          "source_reference": "Plan_izmeneniya_KIM_EGE_2027.pdf",
+          "notes": "Новая позиция в 2027."
+        },
+        {
+          "task_key": "20",
+          "task_number": 20,
+          "title": "Понимание исторических понятий и умение их использовать",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "identify",
+            "explain",
+            "apply_concept"
+          ],
+          "verification_status": "confirmed_2027_project_change",
+          "source_reference": "Plan_izmeneniya_KIM_EGE_2027.pdf",
+          "notes": "В 2026 это была позиция 19."
+        },
+        {
+          "task_key": "22",
+          "task_number": 22,
+          "title": "Два аргумента в подтверждение точки зрения по истории России",
+          "response_type": "extended_answer",
+          "max_score": 2,
+          "skill_codes": [
+            "argue"
+          ],
+          "verification_status": "confirmed_2027_project_change",
+          "source_reference": "Plan_izmeneniya_KIM_EGE_2027.pdf",
+          "notes": "Материал по всеобщей истории исключён; в 2026 это была позиция 21."
+        }
+      ],
+      "codifier_elements": []
+    },
+    {
+      "model_key": "EGE_SOCIAL_STUDIES_2027_PROJECT",
+      "exam": "EGE",
+      "subject": "SOCIAL_STUDIES",
+      "year": 2027,
+      "status": "project",
+      "total_tasks": 25,
+      "max_primary_score": 58,
+      "source_url": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+      "change_source_url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_EGE_2027.pdf",
+      "notes": "ФИПИ указывает отсутствие изменений модели КИМ обществознания в плане изменений ЕГЭ-2027. Кодификаторная сетка ниже перенесена из официального Навигатора ФИПИ-2026 как baseline и требует повторной сверки при публикации утверждённых документов 2027.",
+      "metadata": {
+        "verification": "2026_official_baseline_plus_2027_no_change_notice",
+        "codifier_status": "carried_forward_pending_final_2027_confirmation"
+      },
+      "resources": [
+        {
+          "resource_type": "project_bundle",
+          "title": "Проекты ЕГЭ-2027: обществознание",
+          "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/ob_11_2027.zip",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "change_plan",
+          "title": "Планируемые изменения в КИМ ЕГЭ 2027",
+          "url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_EGE_2027.pdf",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "navigator",
+          "title": "Навигатор самостоятельной подготовки к ЕГЭ-2026 по обществознанию",
+          "url": "https://fipi.ru/navigator-podgotovki/navigator-ege",
+          "source_year": 2026,
+          "status": "official_baseline"
+        }
+      ],
+      "tasks": [
+        {
+          "task_key": "17",
+          "task_number": 17,
+          "title": "Работа с обществоведческим текстом: извлечение явной информации",
+          "response_type": "extended_answer",
+          "max_score": 2,
+          "skill_codes": [
+            "analyze_source"
+          ],
+          "verification_status": "official_2026_baseline_carried_forward",
+          "source_reference": "Методические материалы ФИПИ-2026; модель 2027 без изменений",
+          "notes": null
+        },
+        {
+          "task_key": "18",
+          "task_number": 18,
+          "title": "Раскрытие смысла обществоведческого понятия и связанных положений",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "identify",
+            "explain"
+          ],
+          "verification_status": "official_2026_baseline_carried_forward",
+          "source_reference": "Методические материалы ФИПИ-2026; модель 2027 без изменений",
+          "notes": null
+        },
+        {
+          "task_key": "24",
+          "task_number": 24,
+          "title": "Сложный план по теме обществоведческого курса",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "build_plan"
+          ],
+          "verification_status": "official_2026_baseline_carried_forward",
+          "source_reference": "ФИПИ: рекомендации по заданиям 24–25; модель 2027 без изменений",
+          "notes": null
+        },
+        {
+          "task_key": "25",
+          "task_number": 25,
+          "title": "Обоснование, ответы на вопрос и конкретизация примерами",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "argue",
+            "give_example",
+            "apply_concept"
+          ],
+          "verification_status": "official_2026_baseline_carried_forward",
+          "source_reference": "ФИПИ: рекомендации по заданиям 24–25; модель 2027 без изменений",
+          "notes": null
+        }
+      ],
+      "codifier_elements": [
+        {
+          "code": "1.1",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Человек как результат биологической и социокультурной эволюции; личность; потребности и интересы",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.2",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Мировоззрение; общественное и индивидуальное сознание; самосознание и социальное поведение",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.3",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Деятельность и её структура; мотивация; виды деятельности; свобода и необходимость",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.4",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Познание мира; чувственное и рациональное познание; мышление; виды знания",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.5",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Истина, её критерии; абсолютная и относительная истина",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.6",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Общество как система; общественные отношения; подсистемы и элементы общества",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.7",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Общественные потребности и социальные институты; признаки и функции социальных институтов",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.8",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Типы обществ; информационное общество; массовая коммуникация",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.9",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Общественное развитие: эволюция, революция, реформа, прогресс; глобализация; вызовы XXI века",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.10",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Духовная деятельность; духовные ценности; материальная и духовная культура; формы и функции культуры",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.11",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Мораль; нравственность; этика; гражданственность; патриотизм",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.12",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Наука; методы и уровни научного познания; функции науки; научно-технологическое развитие",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.13",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Образование; российская система образования; непрерывность образования; самообразование",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.14",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Религия; мировые и национальные религии; свобода совести; межконфессиональный мир",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "1.15",
+          "section": "Человек в обществе. Духовная культура",
+          "normalized_label": "Искусство и его основные функции; особенности искусства как формы духовной культуры",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-1-chelovek.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.1",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Роль экономики; микро-, макро- и мировая экономика; ограниченность ресурсов; экономический выбор",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.2",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Экономические институты; собственность и её экономическое содержание",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.3",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Типы экономических систем",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.4",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Экономическая деятельность и её субъекты; потребление, сбережения, инвестиции; рациональное поведение",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.5",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Рынок; спрос и предложение; рыночное равновесие; эластичность; рынки факторов производства",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.6",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Конкуренция; типы рыночных структур; монополия и антимонопольная политика",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.7",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Рынок труда; заработная плата; занятость и безработица; государственная политика занятости",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.8",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Фирма; производство; факторы производства; издержки; выручка; прибыль; эффективность",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.9",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Предпринимательство; организационно-правовые формы; малый бизнес; поддержка предпринимательства",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.10",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Финансовый рынок; банки; банковская система; Центральный банк; денежно-кредитная политика",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.11",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Финансовые услуги; вклады и кредиты; финансовые технологии и безопасность; цифровые финансовые активы",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.12",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Инфляция: причины, виды, последствия; антиинфляционная политика",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.13",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Государство в экономике; несовершенства рынка; общественные блага; внешние эффекты; регулирование",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.14",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Государственный бюджет; дефицит, профицит; государственный долг",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.15",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Налоги и налоговая система РФ; функции налогов; льготы, вычеты; фискальная политика",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.16",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Экономический рост; ВВП и ВНП; номинальный и реальный ВВП; факторы долгосрочного роста",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.17",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Экономический цикл; фазы и причины циклов",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "2.18",
+          "section": "Экономическая жизнь общества",
+          "normalized_label": "Мировая экономика; международное разделение труда; внешняя торговля; валютный рынок; импортозамещение",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-2-ekonomika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.1",
+          "section": "Социальная сфера",
+          "normalized_label": "Социальные общности и группы; социальная стратификация; неравенство; социальная структура российского общества",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.2",
+          "section": "Социальная сфера",
+          "normalized_label": "Этнические общности; нация; межнациональные отношения; этносоциальные конфликты; национальная политика",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.3",
+          "section": "Социальная сфера",
+          "normalized_label": "Молодёжь как социальная группа; молодёжная субкультура",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.4",
+          "section": "Социальная сфера",
+          "normalized_label": "Социальные статусы и роли; социальная мобильность, её формы и каналы",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.5",
+          "section": "Социальная сфера",
+          "normalized_label": "Семья и брак; функции и типы семьи; семья как социальный институт",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.6",
+          "section": "Социальная сфера",
+          "normalized_label": "Социализация личности; этапы и агенты социализации",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.7",
+          "section": "Социальная сфера",
+          "normalized_label": "Социальные нормы; девиантное поведение; конформизм; социальный контроль и самоконтроль",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.8",
+          "section": "Социальная сфера",
+          "normalized_label": "Социальный конфликт; виды, причины и способы разрешения",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.9",
+          "section": "Социальная сфера",
+          "normalized_label": "Социальная политика и поддержка; молодёжная политика; поддержка семьи",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "3.10",
+          "section": "Социальная сфера",
+          "normalized_label": "Особенности профессиональной деятельности в социальных, экономических, политических и юридических сферах",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-3-social-sfera.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.1",
+          "section": "Политическая сфера",
+          "normalized_label": "Политическая власть и субъекты политики; структура, ресурсы, функции и легитимность власти; политические институты",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.2",
+          "section": "Политическая сфера",
+          "normalized_label": "Политическая система общества; структура и функции; политическая система РФ",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.3",
+          "section": "Политическая сфера",
+          "normalized_label": "Государство как основной институт политической системы; суверенитет; функции государства",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.4",
+          "section": "Политическая сфера",
+          "normalized_label": "Форма государства; формы правления; государственно-территориальное устройство; политические режимы; демократия; гражданское общество",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.5",
+          "section": "Политическая сфера",
+          "normalized_label": "Федеративное устройство Российской Федерации",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.6",
+          "section": "Политическая сфера",
+          "normalized_label": "Субъекты государственной власти в Российской Федерации",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.7",
+          "section": "Политическая сфера",
+          "normalized_label": "Коррупция и антикоррупционная политика; национальная безопасность; противодействие экстремизму",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.8",
+          "section": "Политическая сфера",
+          "normalized_label": "Политическая культура; политическое поведение; политическое участие; абсентеизм; политический процесс",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.9",
+          "section": "Политическая сфера",
+          "normalized_label": "Политическая идеология; политические партии; типы партийных систем",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.10",
+          "section": "Политическая сфера",
+          "normalized_label": "Избирательная система; мажоритарная, пропорциональная и смешанная системы; избирательная система РФ",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.11",
+          "section": "Политическая сфера",
+          "normalized_label": "Политическая элита и политическое лидерство",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "4.12",
+          "section": "Политическая сфера",
+          "normalized_label": "СМИ и Интернет в политической жизни и политической коммуникации",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-4-politika.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.1",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Право как социальный институт; признаки и функции права; правовые нормы",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.2",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Источники права; нормативные правовые акты; законы и законодательный процесс",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.3",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Система права; отрасли; частное и публичное, материальное и процессуальное право; система российского права",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.4",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Правоотношения; признаки и субъекты правоотношений",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.5",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Правомерное поведение и правонарушение; состав правонарушения; юридическая ответственность",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.6",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Конституция РФ; основы конституционного строя; гражданство РФ",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.7",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Права и свободы человека и гражданина; конституционные обязанности; воинская обязанность и АГС",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.8",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Гражданское право; субъекты; юридические лица; правоспособность и дееспособность; защита гражданских прав",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.9",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Семейное право; брак; права и обязанности супругов, родителей и детей",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.10",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Трудовое право; трудовой договор; права и обязанности сторон; дисциплинарная ответственность; труд несовершеннолетних",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.11",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Налоговое законодательство; права и обязанности налогоплательщиков; ответственность за налоговые правонарушения",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.12",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Образовательное право; права и обязанности участников образовательного процесса",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.13",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Административное право; административное правонарушение, ответственность и наказания",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.14",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Экологическое законодательство; экологические правонарушения; защита права на благоприятную среду",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.15",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Уголовное право; преступление; уголовная ответственность и наказания; несовершеннолетние",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.16",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Гражданский процесс; принципы, участники и стадии",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.17",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Административный процесс; производство по делам об административных правонарушениях",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.18",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Уголовный процесс; принципы, участники, стадии и меры процессуального принуждения",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.19",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Конституционное и арбитражное судопроизводство",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        },
+        {
+          "code": "5.20",
+          "section": "Правовое регулирование общественных отношений в Российской Федерации",
+          "normalized_label": "Правоохранительные органы Российской Федерации",
+          "source_reference": "https://doc.fipi.ru/navigator-podgotovki/navigator-ege/2026/ob-5-pravo.pdf",
+          "verification_status": "official_2026_baseline_carried_forward_pending_2027_final",
+          "metadata": {
+            "basis": "FIPI Navigator EGE-2026",
+            "2027_change_notice": "no_changes_to_social_studies_model"
+          }
+        }
+      ]
+    },
+    {
+      "model_key": "OGE_HISTORY_2027_PROJECT",
+      "exam": "OGE",
+      "subject": "HISTORY",
+      "year": 2027,
+      "status": "project",
+      "total_tasks": 23,
+      "max_primary_score": 35,
+      "source_url": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "change_source_url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_OGE_2027.pdf",
+      "notes": "Проект ОГЭ-2027: исключено задание 21 по нумерации 2026 года; всего 23 задания, максимум 35. Точная перенумерация остальных линий должна сверяться по проектному архиву.",
+      "metadata": {
+        "verification": "official_2027_change_plan"
+      },
+      "resources": [
+        {
+          "resource_type": "project_bundle",
+          "title": "Проекты ОГЭ-2027: история",
+          "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/is_9_2027.zip",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "change_plan",
+          "title": "Планируемые изменения в КИМ ОГЭ 2027",
+          "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "navigator",
+          "title": "Тренировочные задания ОГЭ-2026 по истории",
+          "url": "https://doc.fipi.ru/navigator-podgotovki/navigator-oge/is-9_tren.pdf",
+          "source_year": 2026,
+          "status": "official_baseline"
+        }
+      ],
+      "tasks": [
+        {
+          "task_key": "REMOVED_2026_21",
+          "task_number": null,
+          "title": "Задание 21 модели 2026 исключено из ОГЭ-2027",
+          "response_type": null,
+          "max_score": null,
+          "skill_codes": [],
+          "verification_status": "confirmed_2027_project_change",
+          "source_reference": "Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "notes": "Не создавать задания 2027 по старой линии 21 без дополнительной проверки."
+        }
+      ],
+      "codifier_elements": []
+    },
+    {
+      "model_key": "OGE_SOCIAL_STUDIES_2027_PROJECT",
+      "exam": "OGE",
+      "subject": "SOCIAL_STUDIES",
+      "year": 2027,
+      "status": "project",
+      "total_tasks": 20,
+      "max_primary_score": 32,
+      "source_url": "https://fipi.ru/oge/demoversii-specifikacii-kodifikatory",
+      "change_source_url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_OGE_2027.pdf",
+      "notes": "Модель существенно изменена: 20 заданий, максимум 32; изменён фотоанализ, две модели статистического задания, новая позиция 17, три задания с развёрнутым ответом по текстовому источнику.",
+      "metadata": {
+        "verification": "official_2027_change_plan",
+        "exact_task_order": "pending_project_bundle_parse"
+      },
+      "resources": [
+        {
+          "resource_type": "project_bundle",
+          "title": "Проекты ОГЭ-2027: обществознание",
+          "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/ob_9_2027.zip",
+          "source_year": 2027,
+          "status": "official_project"
+        },
+        {
+          "resource_type": "change_plan",
+          "title": "Планируемые изменения в КИМ ОГЭ 2027",
+          "url": "https://doc.fipi.ru/oge/demoversii-specifikacii-kodifikatory/2027/Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "source_year": 2027,
+          "status": "official_project"
+        }
+      ],
+      "tasks": [
+        {
+          "task_key": "PHOTO_ANALYSIS",
+          "task_number": null,
+          "title": "Анализ фотоизображения: один дополнительный вопрос или объяснение",
+          "response_type": "extended_answer",
+          "max_score": 2,
+          "skill_codes": [
+            "apply_concept",
+            "explain"
+          ],
+          "verification_status": "confirmed_family_number_pending",
+          "source_reference": "Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "notes": "Порядок заданий в 2027 изменён; номер не фиксируем до разбора архива."
+        },
+        {
+          "task_key": "STATISTICS_TWO_MODELS",
+          "task_number": null,
+          "title": "Анализ статистической информации: две модели задания",
+          "response_type": "mixed",
+          "max_score": null,
+          "skill_codes": [
+            "interpret_statistics"
+          ],
+          "verification_status": "confirmed_family_number_pending",
+          "source_reference": "Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "notes": null
+        },
+        {
+          "task_key": "17",
+          "task_number": 17,
+          "title": "Анализ социальной информации, формулирование выводов, подкреплённых аргументами",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "analyze_source",
+            "argue"
+          ],
+          "verification_status": "confirmed_2027_project_change",
+          "source_reference": "Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "notes": "Новая позиция 17."
+        },
+        {
+          "task_key": "TEXT_SOURCE_EXTENDED_SET",
+          "task_number": null,
+          "title": "Три задания с развёрнутым ответом на основе текстового источника социальной информации",
+          "response_type": "extended_answer",
+          "max_score": null,
+          "skill_codes": [
+            "analyze_source",
+            "explain",
+            "apply_concept"
+          ],
+          "verification_status": "confirmed_family_number_pending",
+          "source_reference": "Plan_izmeneniya_KIM_OGE_2027.pdf",
+          "notes": "Точные номера не фиксируем до разбора проектного архива."
+        }
+      ],
+      "codifier_elements": []
+    }
+  ]
+}

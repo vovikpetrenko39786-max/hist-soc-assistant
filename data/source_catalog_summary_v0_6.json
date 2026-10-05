@@ -1,0 +1,8 @@
+{
+  "source_records": 18,
+  "mapping_rules": 17,
+  "candidate_links": 255,
+  "mapped_topics": 255,
+  "unmapped_topics": 52,
+  "compileall": true
+}

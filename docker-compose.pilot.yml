@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: teacher_assistant
+      POSTGRES_USER: teacher
+      POSTGRES_PASSWORD: teacher
+    volumes:
+      - teacher_assistant_pg:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://teacher:teacher@postgres:5432/teacher_assistant
+      OUTPUT_STORAGE_DIR: /app/data/generated_outputs
+      SOURCE_STORAGE_DIR: /app/data/source_files
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - generated_outputs:/app/data/generated_outputs
+      - source_files:/app/data/source_files
+    restart: unless-stopped
+
+  telegram:
+    build: .
+    command: ["python", "-m", "telegram_bot.main"]
+    env_file: .env
+    environment:
+      TELEGRAM_BACKEND_BASE_URL: http://api:8000
+      DATABASE_URL: postgresql+asyncpg://teacher:teacher@postgres:5432/teacher_assistant
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  teacher_assistant_pg:
+  generated_outputs:
+  source_files:
