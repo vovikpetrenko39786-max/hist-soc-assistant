@@ -272,7 +272,6 @@ async def import_topic_card(
                 task_types=item.get("task_types", []),
                 codifier_reference=item.get("codifier_reference"),
                 importance=item.get("importance", "normal"),
-                metadata_json=exam_meta,
             )
         )
         counts["exam_links"] += 1
