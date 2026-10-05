@@ -126,7 +126,6 @@ async def get_or_create_outcome(session, subject, grade, item: dict, source_url:
             text=item["text"],
             source_reference=source_reference,
             review_status=item.get("review_status", "reviewed"),
-            metadata_json={"normalization": "topic_card_methodical_normalization"},
         )
         session.add(row)
         await session.flush()
