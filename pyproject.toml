@@ -31,3 +31,11 @@ line-length = 100
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*", "telegram_bot*"]
+exclude = ["tests*", "scripts*", "docs*", "data*", "sql*"]
