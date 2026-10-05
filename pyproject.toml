@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn[standard]",
   "sqlalchemy[asyncio]>=2",
   "asyncpg",
+    "psycopg[binary]>=3.2",
   "pydantic>=2",
   "pydantic-settings",
   "pgvector",
