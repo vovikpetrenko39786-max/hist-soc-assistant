@@ -138,10 +138,60 @@ class NaturalLanguageParser:
                 artifact_types.append(artifact_type)
 
         if not artifact_types:
-            # Default teaching request.
-            artifact_types = ["lesson"]
-            notes.append("Тип материала не указан явно; выбран lesson по умолчанию.")
-            confidence_parts.append(0.55)
+            # Teacher-facing informational / analytical request.
+            # Explicit lesson / assessment / worksheet / homework detection
+            # above always has higher priority.
+            info_markers = (
+                "памятк",
+                "что изменил",
+                "изменени",
+                "что нового",
+                "сравни",
+                "сравнение",
+                "обзор",
+                "объясни",
+                "расскажи",
+                "проанализируй",
+                "анализ",
+                "справк",
+                "егэ",
+                "огэ",
+                "фипи",
+                "демоверс",
+                "кодифик",
+                "спецификац",
+            )
+
+            informational_request = any(
+                marker in low for marker in info_markers
+            )
+
+            if informational_request:
+                artifact_types = ["idea_enhancement"]
+
+                # Exam requests have deterministic grade context.
+                if "егэ" in low:
+                    grade = grade or 11
+                    class_label = class_label or "11"
+                    level = "exam"
+                elif "огэ" in low:
+                    grade = grade or 9
+                    class_label = class_label or "9"
+                    level = "exam"
+
+                notes.append(
+                    "Информационно-аналитический запрос направлен "
+                    "в teacher-facing режим."
+                )
+                confidence_parts.append(0.90)
+
+            else:
+                # Preserve the old default for ordinary teaching requests.
+                artifact_types = ["lesson"]
+                notes.append(
+                    "Тип материала не указан явно; выбран lesson по умолчанию."
+                )
+                confidence_parts.append(0.55)
         else:
             confidence_parts.append(1.0)
 
