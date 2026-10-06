@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -10,5 +11,5 @@ if database_url.startswith("postgres://"):
 elif database_url.startswith("postgresql://"):
     database_url = "postgresql+asyncpg://" + database_url[len("postgresql://"):]
 
-engine = create_async_engine(database_url, future=True, echo=False)
+engine = create_async_engine(database_url, future=True, echo=False, json_serializer=lambda obj: json.dumps(obj, ensure_ascii=False, default=str))
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
