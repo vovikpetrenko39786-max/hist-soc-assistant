@@ -1,5 +1,4 @@
 from __future__ import annotations
-from fastapi.encoders import jsonable_encoder
 
 import uuid
 
@@ -18,6 +17,12 @@ from app.services.quality_gate import LessonQualityGate
 from app.services.retrieval import RetrievalService
 
 settings = get_settings()
+
+
+def _json_safe(value):
+    return json.loads(
+        json.dumps(value, ensure_ascii=False, default=str)
+    )
 
 
 class GroundedGenerationError(RuntimeError):
@@ -80,9 +85,9 @@ class GroundedLessonService:
                     provider="none",
                     model="none",
                     prompt_hash=prompt_hash,
-                    request_json=request.model_dump(mode="json"),
-                    context_json=jsonable_encoder(context),
-                    source_manifest=jsonable_encoder(context["source_manifest"]),
+                    request_json=_json_safe(request.model_dump(mode="json")),
+                    context_json=_json_safe(context),
+                    source_manifest=_json_safe(context["source_manifest"]),
                     output_json={},
                     quality_report={},
                     status="dry_run",
@@ -124,11 +129,11 @@ class GroundedLessonService:
                 provider=provider.name,
                 model=provider.model,
                 prompt_hash=prompt_hash,
-                request_json=request.model_dump(mode="json"),
-                context_json=jsonable_encoder(context),
-                source_manifest=jsonable_encoder(context["source_manifest"]),
-                output_json=artifact.model_dump(mode="json"),
-                quality_report=jsonable_encoder(quality),
+                request_json=_json_safe(request.model_dump(mode="json")),
+                context_json=_json_safe(context),
+                source_manifest=_json_safe(context["source_manifest"]),
+                output_json=_json_safe(artifact.model_dump(mode="json")),
+                quality_report=_json_safe(quality),
                 status="generated" if quality["passed"] else "quality_failed",
                 dry_run=False,
             )
