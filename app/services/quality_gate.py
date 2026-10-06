@@ -129,6 +129,44 @@ class LessonQualityGate:
             f"Покрытие обязательных понятий: {concept_coverage:.0%}.",
         )
 
+        artifact_text = str(artifact.model_dump(mode="json")).casefold()
+        generic_markers = (
+            "найти в учебнике",
+            "найдите в учебнике",
+            "фрагмент учебника",
+            "выбранного фрагмента",
+            "одного из обществ",
+            "материал урока",
+            "по материалу учебника",
+            "из учебника",
+        )
+        generic_hits = sum(artifact_text.count(x) for x in generic_markers)
+        specificity_ok = generic_hits <= 3
+        add(
+            "content_specificity",
+            specificity_ok,
+            "warning",
+            f"Предметная конкретика: generic_hits={generic_hits}.",
+        )
+
+
+        if source_manifest:
+            add(
+                "source_grounding_presence",
+                bool(artifact.source_references),
+                "error",
+                "Источники retrieval использованы."
+                if artifact.source_references
+                else "Источники найдены retrieval, но урок на них не ссылается.",
+            )
+        else:
+            add(
+                "source_grounding_presence",
+                False,
+                "warning",
+                "Retrieval не дал содержательных источников.",
+            )
+
         errors = [x for x in checks if not x["passed"] and x["severity"] == "error"]
         warnings = [x["message"] for x in checks if not x["passed"] and x["severity"] == "warning"]
 
@@ -136,6 +174,10 @@ class LessonQualityGate:
             1 for x in checks if x["passed"]
         )
         score = round(100 * passed_weight / max(1, len(checks)))
+        if not source_manifest:
+            score = min(score, 85)
+        if not specificity_ok:
+            score = min(score, 75)
 
         return {
             "passed": not errors,
