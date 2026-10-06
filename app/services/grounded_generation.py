@@ -1,4 +1,5 @@
 from __future__ import annotations
+from fastapi.encoders import jsonable_encoder
 
 import uuid
 
@@ -80,8 +81,8 @@ class GroundedLessonService:
                     model="none",
                     prompt_hash=prompt_hash,
                     request_json=request.model_dump(mode="json"),
-                    context_json=context,
-                    source_manifest=context["source_manifest"],
+                    context_json=jsonable_encoder(context),
+                    source_manifest=jsonable_encoder(context["source_manifest"]),
                     output_json={},
                     quality_report={},
                     status="dry_run",
@@ -124,10 +125,10 @@ class GroundedLessonService:
                 model=provider.model,
                 prompt_hash=prompt_hash,
                 request_json=request.model_dump(mode="json"),
-                context_json=context,
-                source_manifest=context["source_manifest"],
+                context_json=jsonable_encoder(context),
+                source_manifest=jsonable_encoder(context["source_manifest"]),
                 output_json=artifact.model_dump(mode="json"),
-                quality_report=quality,
+                quality_report=jsonable_encoder(quality),
                 status="generated" if quality["passed"] else "quality_failed",
                 dry_run=False,
             )
