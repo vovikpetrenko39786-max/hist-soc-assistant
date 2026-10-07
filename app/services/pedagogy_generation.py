@@ -54,6 +54,26 @@ class PedagogyGenerationService:
                 top_k=request.retrieval_top_k, candidate_k=max(20, request.retrieval_top_k * 5),
             ))
 
+            # Library-first fallback: retry retrieval with the full user request.
+            if (
+                request.knowledge_policy == "library_first"
+                and request.request_text
+                and not (retrieval.get("hits") or [])
+            ):
+                retrieval = await self.retrieval.retrieve(
+                    session,
+                    RetrievalRequest(
+                        query=request.request_text,
+                        subject=request.subject,
+                        grade=request.grade,
+                        level=request.level,
+                        mode="hybrid",
+                        top_k=8,
+                        source_key=request.source_key,
+                        strict_source=request.strict_source,
+                    ),
+                )
+
         web_query = request.request_text.strip() or (request.topic or (topic.title if topic else ""))
         web_retrieval = await self.web.controlled_fallback(
             session,
