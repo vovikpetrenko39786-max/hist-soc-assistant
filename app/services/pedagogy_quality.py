@@ -41,6 +41,64 @@ class PedagogyQualityGate:
             add("time_defined", int(teacher.get("estimated_minutes", 0)) > 0, "Время определено.")
             add("success_criteria", bool(teacher.get("success_criteria")), "Есть критерии успеха.")
             if student: add("student_no_teacher_note", student.get("teacher_note") is None, "В student version нет служебной заметки.")
+        elif artifact_type == "informational":
+            answer = str(teacher.get("answer") or "").strip()
+            refs = teacher.get("source_references") or []
+
+            add(
+                "informational_answer",
+                bool(answer),
+                "Есть содержательный информационно-аналитический ответ.",
+            )
+
+            if source_manifest:
+                add(
+                    "retrieved_sources",
+                    True,
+                    "Для ответа получены источники из source_manifest.",
+                )
+                add(
+                    "source_references",
+                    bool(refs),
+                    "Ответ содержит ссылки на использованные источники.",
+                )
+
+                allowed_titles = {
+                    str(x.get("title") or x.get("source_title") or "").strip()
+                    for x in source_manifest
+                    if x.get("title") or x.get("source_title")
+                }
+                used_titles = {
+                    str(x.get("title") or x.get("source_title") or "").strip()
+                    for x in refs
+                    if x.get("title") or x.get("source_title")
+                }
+
+                if used_titles and allowed_titles:
+                    add(
+                        "grounded_references",
+                        used_titles.issubset(allowed_titles),
+                        "Ссылки informational-ответа принадлежат source_manifest.",
+                    )
+
+                project_sources = any(
+                    "проект" in str(x.get("title") or "").lower()
+                    or "project" in str(x.get("status") or "").lower()
+                    for x in source_manifest
+                )
+                if project_sources:
+                    add(
+                        "project_status_disclosed",
+                        "проект" in answer.lower(),
+                        "Проектный статус документов явно отражён в ответе.",
+                    )
+            else:
+                add(
+                    "no_fake_sources",
+                    not refs,
+                    "При отсутствии retrieval ответ не создаёт фиктивные ссылки.",
+                )
+
         elif artifact_type == "idea_enhancement":
             labels = {x.get("label") for x in teacher.get("options", [])}
             add("preserves_core", bool(teacher.get("preserve_core")), "Ядро идеи сохраняется.")

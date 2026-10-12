@@ -20,6 +20,7 @@ class ParsedArtifact(BaseModel):
         "worksheet",
         "homework",
         "idea_enhancement",
+        "informational",
     ]
     audience: Literal["teacher", "student", "both"] = "teacher"
 

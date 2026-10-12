@@ -38,7 +38,7 @@ class PedagogyGenerationService:
 
     async def generate(self, session: AsyncSession, request: PedagogyGenerationRequest) -> dict:
         topic = None; topic_card = None; retrieval = {"hits": [], "warnings": []}
-        if request.artifact_type != "idea_enhancement":
+        if request.artifact_type not in {"idea_enhancement", "informational"}:
             topic = await self.resolver.resolve_topic(
                 session, topic_id=request.topic_id, topic_text=request.topic,
                 subject=request.subject, grade=request.grade, level=request.level,
@@ -134,7 +134,49 @@ class PedagogyGenerationService:
                 "student_artifact":None,"quality":None,"run_id":run_id,
             }
 
-        provider = self._provider(); bundle = await provider.generate(context)
+        provider = self._provider()
+
+        provider_context = context
+        if request.artifact_type == "informational":
+            # Transitional adapter:
+            # keep the proven provider schema internally, while exposing a
+            # dedicated informational artifact to the rest of the system.
+            provider_context = dict(context)
+            provider_context["artifact_type"] = "idea_enhancement"
+
+        bundle = await provider.generate(provider_context)
+
+        if request.artifact_type == "informational":
+            raw_teacher = bundle.get("teacher") or {}
+
+            answer = str(
+                raw_teacher.get("recommended_result")
+                or raw_teacher.get("original_idea")
+                or request.request_text
+                or ""
+            ).strip()
+
+            source_refs = raw_teacher.get("source_references") or []
+
+            status_note = None
+            if "проект" in answer.lower():
+                status_note = (
+                    "В ответе учтён проектный статус использованных документов."
+                )
+
+            bundle = {
+                "teacher": {
+                    "artifact_type": "informational",
+                    "title": raw_teacher.get("title")
+                    or "Информационно-аналитическая справка",
+                    "answer": answer,
+                    "key_points": [],
+                    "status_note": status_note,
+                    "practical_takeaways": [],
+                    "source_references": source_refs,
+                },
+                "student": None,
+            }
         quality = self.quality_gate.evaluate(
             request.artifact_type, bundle["teacher"], bundle.get("student"),
             topic_card, context["source_manifest"],

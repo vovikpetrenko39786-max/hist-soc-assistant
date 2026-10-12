@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
-ArtifactType = Literal["lesson", "assessment", "worksheet", "homework", "idea_enhancement"]
+ArtifactType = Literal["lesson", "assessment", "worksheet", "homework", "idea_enhancement", "informational"]
 Audience = Literal["teacher", "student", "both"]
 GenerationMode = Literal["practical", "full", "formal", "emergency"]
 
@@ -154,6 +154,17 @@ class IdeaEnhancementArtifact(BaseModel):
     source_references: list[SourceReference] = Field(default_factory=list)
 
 
+
+class InformationalArtifact(BaseModel):
+    artifact_type: Literal["informational"] = "informational"
+    title: str = "Информационно-аналитическая справка"
+    answer: str
+    key_points: list[str] = Field(default_factory=list)
+    status_note: str | None = None
+    practical_takeaways: list[str] = Field(default_factory=list)
+    source_references: list[SourceReference] = Field(default_factory=list)
+
+
 class PedagogyGenerationRequest(BaseModel):
     artifact_type: ArtifactType
     request_text: str = Field(default="", max_length=12000)
@@ -182,10 +193,10 @@ class PedagogyGenerationRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_request(self):
-        if self.artifact_type != "idea_enhancement" and not self.topic_id and not self.topic:
+        if self.artifact_type not in {"idea_enhancement", "informational"} and not self.topic_id and not self.topic:
             raise ValueError("topic_id or topic is required")
-        if self.artifact_type == "idea_enhancement" and not self.request_text.strip():
-            raise ValueError("request_text is required for idea_enhancement")
+        if self.artifact_type in {"idea_enhancement", "informational"} and not self.request_text.strip():
+            raise ValueError("request_text is required for idea_enhancement/informational")
         if self.strict_source and not self.source_key:
             raise ValueError("strict_source=true requires source_key")
         if self.artifact_type == "lesson" and self.duration_minutes is None:

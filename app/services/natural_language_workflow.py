@@ -167,7 +167,7 @@ class NaturalLanguageParser:
             )
 
             if informational_request:
-                artifact_types = ["idea_enhancement"]
+                artifact_types = ["informational"]
 
                 # Exam requests have deterministic grade context.
                 if "егэ" in low:
@@ -194,6 +194,54 @@ class NaturalLanguageParser:
                 confidence_parts.append(0.55)
         else:
             confidence_parts.append(1.0)
+
+        # Normalize IDEA Enhancer intent.
+        #
+        # Mentioning the word "урок" inside "идея урока" must not
+        # automatically request a full lesson. A lesson is added only when
+        # the user explicitly asks to create/prepare/build one.
+        idea_improvement_request = any(
+            x in low
+            for x in (
+                "улучши идею",
+                "улучшить идею",
+                "доработай идею",
+                "доработать идею",
+                "развить идею",
+                "развей идею",
+                "помоги её улучшить",
+                "помоги ее улучшить",
+                "есть идея урока",
+                "идея для урока",
+            )
+        )
+
+        explicit_lesson_build = any(
+            x in low
+            for x in (
+                "подготовь урок",
+                "подготовить урок",
+                "составь урок",
+                "составить урок",
+                "разработай урок",
+                "разработать урок",
+                "создай урок",
+                "создать урок",
+                "сделай урок",
+                "сделать урок",
+                "план урока",
+                "конспект урока",
+                "на основе идеи подготовь урок",
+                "на её основе подготовь урок",
+                "на ее основе подготовь урок",
+            )
+        )
+
+        if "informational" not in artifact_types and idea_improvement_request:
+            if explicit_lesson_build:
+                artifact_types = ["idea_enhancement", "lesson"]
+            else:
+                artifact_types = ["idea_enhancement"]
 
         # Audience.
         both = any(x in low for x in (
@@ -262,7 +310,7 @@ class NaturalLanguageParser:
             confidence_parts.append(1.0)
         else:
             confidence_parts.append(0.0)
-            if "idea_enhancement" not in artifact_types:
+            if not any(x in artifact_types for x in {"idea_enhancement", "informational"}):
                 notes.append("Не удалось надёжно выделить тему из свободного текста.")
 
         confidence = sum(confidence_parts) / len(confidence_parts)
@@ -390,9 +438,9 @@ class NaturalLanguageWorkflowService:
         warnings = list(plan.notes)
         results = []
 
-        # IDEA Enhancer can work without curriculum topic.
+        # IDEA Enhancer and informational requests can work without curriculum topic.
         normal_artifacts = [
-            x for x in plan.artifacts if x.artifact_type != "idea_enhancement"
+            x for x in plan.artifacts if x.artifact_type not in {"idea_enhancement", "informational"}
         ]
         if normal_artifacts and (not plan.subject or not plan.grade or not plan.topic):
             missing = []
