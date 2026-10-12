@@ -74,6 +74,29 @@ class PedagogyGenerationService:
                     ),
                 )
 
+        # IDEA/informational library-first fallback.
+        # Informational requests may be routed as idea_enhancement,
+        # so they skip the topic-based retrieval block above.
+        if (
+            request.artifact_type == "idea_enhancement"
+            and request.knowledge_policy == "library_first"
+            and request.request_text
+            and not (retrieval.get("hits") or [])
+        ):
+            retrieval = await self.retrieval.retrieve(
+                session,
+                RetrievalRequest(
+                    query=request.request_text,
+                    subject=request.subject,
+                    grade=request.grade,
+                    level=request.level,
+                    mode="hybrid",
+                    top_k=8,
+                    source_key=request.source_key,
+                    strict_source=request.strict_source,
+                ),
+            )
+
         web_query = request.request_text.strip() or (request.topic or (topic.title if topic else ""))
         web_retrieval = await self.web.controlled_fallback(
             session,
