@@ -51,7 +51,7 @@ class PedagogyQualityGate:
                 "Есть содержательный информационно-аналитический ответ.",
             )
 
-            if source_manifest:
+            if manifest:
                 add(
                     "retrieved_sources",
                     True,
@@ -65,7 +65,7 @@ class PedagogyQualityGate:
 
                 allowed_titles = {
                     str(x.get("title") or x.get("source_title") or "").strip()
-                    for x in source_manifest
+                    for x in manifest
                     if x.get("title") or x.get("source_title")
                 }
                 used_titles = {
@@ -84,7 +84,7 @@ class PedagogyQualityGate:
                 project_sources = any(
                     "проект" in str(x.get("title") or "").lower()
                     or "project" in str(x.get("status") or "").lower()
-                    for x in source_manifest
+                    for x in manifest
                 )
                 if project_sources:
                     add(
