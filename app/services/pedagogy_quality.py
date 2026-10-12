@@ -19,12 +19,23 @@ def source_checks(artifact: dict, manifest: list[dict]):
 
 
 class PedagogyQualityGate:
-    def evaluate(self, artifact_type, teacher, student, topic_card, manifest):
+    def evaluate(self, artifact_type, teacher, student, topic_card, manifest, *, require_sources=False):
         if artifact_type == "lesson":
             payload = dict(teacher); payload.pop("artifact_type", None)
             return LessonQualityGate().evaluate(LessonArtifact.model_validate(payload), topic_card or {}, manifest)
         checks = source_checks(teacher, manifest)
         def add(code, passed, message): checks.append({"code":code,"passed":bool(passed),"severity":"error","message":message})
+        if require_sources:
+            add(
+                "required_sources",
+                bool(manifest),
+                (
+                    "Запрос требует подтверждённые источники."
+                    if manifest
+                    else "Запрос требует подтверждённые источники, но source_manifest пуст."
+                ),
+            )
+
         if artifact_type == "assessment":
             tasks = teacher.get("tasks", []); points = sum(int(x.get("points", 0)) for x in tasks)
             add("has_tasks", bool(tasks), "Есть задания.")

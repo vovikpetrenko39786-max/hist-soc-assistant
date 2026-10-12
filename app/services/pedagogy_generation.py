@@ -16,6 +16,56 @@ from app.services.openai_pedagogy import OpenAIResponsesPedagogyProvider
 settings = get_settings()
 
 
+
+def _requires_explicit_sources(request) -> bool:
+    """
+    Source requirement safety net.
+
+    A request is source-strict when:
+    1) strict_source=True was explicitly set by the router/API; or
+    2) the natural-language request clearly requires authoritative sources.
+
+    This deliberately does NOT make every informational request strict.
+    """
+    if bool(getattr(request, "strict_source", False)):
+        return True
+
+    text = str(getattr(request, "request_text", "") or "").lower().replace("ё", "е")
+
+    source_context = any(
+        marker in text
+        for marker in (
+            "фипи",
+            "официальн",
+            "источник",
+            "документ",
+            "материал",
+            "библиотек",
+            "кодификатор",
+            "спецификац",
+            "демоверс",
+        )
+    )
+
+    strict_instruction = any(
+        marker in text
+        for marker in (
+            "только официаль",
+            "используй только",
+            "использовать только",
+            "только по фипи",
+            "строго по фипи",
+            "строго по источ",
+            "только из библиотек",
+            "не добавляй",
+            "не придумывай",
+            "без предположений",
+        )
+    )
+
+    return source_context and strict_instruction
+
+
 class PedagogyGenerationError(RuntimeError):
     pass
 
@@ -38,6 +88,7 @@ class PedagogyGenerationService:
 
     async def generate(self, session: AsyncSession, request: PedagogyGenerationRequest) -> dict:
         topic = None; topic_card = None; retrieval = {"hits": [], "warnings": []}
+        require_sources = _requires_explicit_sources(request)
         if request.artifact_type not in {"idea_enhancement", "informational"}:
             topic = await self.resolver.resolve_topic(
                 session, topic_id=request.topic_id, topic_text=request.topic,
@@ -180,6 +231,7 @@ class PedagogyGenerationService:
         quality = self.quality_gate.evaluate(
             request.artifact_type, bundle["teacher"], bundle.get("student"),
             topic_card, context["source_manifest"],
+            require_sources=require_sources,
         )
 
         run_id = None
