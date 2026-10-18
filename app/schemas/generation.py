@@ -44,10 +44,11 @@ class LessonTimelineStep(BaseModel):
 
 
 class SourceReference(BaseModel):
-    chunk_id: uuid.UUID
-    source_id: uuid.UUID
+    chunk_id: str
+    source_id: str
     source_key: str | None = None
     title: str
+    url: str | None = None
     section: str | None = None
     page_pdf_start: int | None = None
     page_pdf_end: int | None = None

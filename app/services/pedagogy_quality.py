@@ -3,15 +3,30 @@ from app.services.quality_gate import LessonQualityGate
 
 
 def source_checks(artifact: dict, manifest: list[dict]):
-    allowed = {str(x["chunk_id"]): x for x in manifest}
+    allowed = {
+        str(item.get("chunk_id")): item
+        for item in manifest
+        if item.get("chunk_id") and (item.get("source_id") or item.get("source_key") or item.get("url"))
+    }
     refs = artifact.get("source_references", []) or []
-    invalid = [x for x in refs if str(x["chunk_id"]) not in allowed]
+    invalid = [
+        ref for ref in refs
+        if not isinstance(ref, dict) or not ref.get("chunk_id")
+        or str(ref.get("chunk_id")) not in allowed
+    ]
     mismatches = []
     for ref in refs:
-        src = allowed.get(str(ref["chunk_id"]))
-        if not src: continue
-        for f in ("page_pdf_start","page_pdf_end","page_print_start","page_print_end"):
-            if ref.get(f) != src.get(f): mismatches.append((str(ref["chunk_id"]), f))
+        if not isinstance(ref, dict) or not ref.get("chunk_id"):
+            continue
+        src = allowed.get(str(ref.get("chunk_id")))
+        if not src:
+            continue
+        for field in ("source_id", "title", "url"):
+            if ref.get(field) is not None and src.get(field) is not None and ref[field] != src[field]:
+                mismatches.append((str(ref["chunk_id"]), field))
+        for field in ("page_pdf_start","page_pdf_end","page_print_start","page_print_end"):
+            if src.get(field) is not None and ref.get(field) != src[field]:
+                mismatches.append((str(ref["chunk_id"]), field))
     return [
         {"code":"source_subset","passed":not invalid,"severity":"error","message":"Все ссылки подтверждены retrieval manifest." if not invalid else f"Неподтверждённых ссылок: {len(invalid)}."},
         {"code":"page_grounding","passed":not mismatches,"severity":"error","message":"Страницы подтверждены retrieval manifest." if not mismatches else f"Расхождения страниц: {mismatches[:5]}"},
@@ -25,13 +40,17 @@ class PedagogyQualityGate:
             return LessonQualityGate().evaluate(LessonArtifact.model_validate(payload), topic_card or {}, manifest)
         checks = source_checks(teacher, manifest)
         def add(code, passed, message): checks.append({"code":code,"passed":bool(passed),"severity":"error","message":message})
+        verified_manifest = [
+            item for item in manifest
+            if item.get("chunk_id") and (item.get("source_id") or item.get("source_key") or item.get("url"))
+        ]
         if require_sources:
             add(
                 "required_sources",
-                bool(manifest),
+                bool(verified_manifest),
                 (
                     "Запрос требует подтверждённые источники."
-                    if manifest
+                    if verified_manifest
                     else "Запрос требует подтверждённые источники, но source_manifest пуст."
                 ),
             )
@@ -62,7 +81,7 @@ class PedagogyQualityGate:
                 "Есть содержательный информационно-аналитический ответ.",
             )
 
-            if manifest:
+            if verified_manifest:
                 add(
                     "retrieved_sources",
                     True,

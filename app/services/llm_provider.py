@@ -55,6 +55,7 @@ class TemplateLessonProvider:
                 "source_id": item["source_id"],
                 "source_key": item.get("source_key"),
                 "title": item["title"],
+                "url": item.get("url"),
                 "section": item.get("section"),
                 "page_pdf_start": item.get("page_pdf_start"),
                 "page_pdf_end": item.get("page_pdf_end"),

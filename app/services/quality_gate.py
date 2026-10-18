@@ -77,7 +77,11 @@ class LessonQualityGate:
         )
 
         # Source grounding: references must be a subset of manifest.
-        allowed_chunks = {str(item["chunk_id"]): item for item in source_manifest}
+        allowed_chunks = {
+            str(item.get("chunk_id")): item
+            for item in source_manifest
+            if item.get("chunk_id") and (item.get("source_id") or item.get("source_key") or item.get("url"))
+        }
         invalid_refs = [
             ref for ref in artifact.source_references
             if str(ref.chunk_id) not in allowed_chunks
@@ -101,7 +105,7 @@ class LessonQualityGate:
                 "page_print_start", "page_print_end",
             ]
             for field in fields:
-                if getattr(ref, field) != manifest.get(field):
+                if manifest.get(field) is not None and getattr(ref, field) != manifest[field]:
                     page_mismatches.append((str(ref.chunk_id), field))
         add(
             "page_grounding",

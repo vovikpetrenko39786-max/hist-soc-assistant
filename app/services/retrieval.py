@@ -272,6 +272,7 @@ class RetrievalService:
             "source_id": source.id,
             "source_key": source.source_key,
             "source_title": source.title,
+            "url": getattr(source, "source_url", None),
             "source_type": source.source_type,
             "source_status": source.status,
             "origin": source.origin,

@@ -8,7 +8,7 @@ from app.services.llm_provider import GenerationProviderError, HttpLessonProvide
 def source_refs(manifest: list[dict]) -> list[dict]:
     return [{
         "chunk_id": x["chunk_id"], "source_id": x["source_id"], "source_key": x.get("source_key"),
-        "title": x["title"], "section": x.get("section"),
+        "title": x["title"], "url": x.get("url"), "section": x.get("section"),
         "page_pdf_start": x.get("page_pdf_start"), "page_pdf_end": x.get("page_pdf_end"),
         "page_print_start": x.get("page_print_start"), "page_print_end": x.get("page_print_end"),
         "quote_safe": x.get("quote_safe", False),
