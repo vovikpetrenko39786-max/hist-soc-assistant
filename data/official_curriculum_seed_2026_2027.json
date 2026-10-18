@@ -16570,7 +16570,33 @@
                   "mapping_level": "general_topic",
                   "source_key": "FIPI_OGE_2027_PROJECTS"
                 }
-              ]
+              ],
+              "suitable_activities": [
+                "case_analysis",
+                "concept_sort",
+                "example_counterexample",
+                "mini_debate",
+                "source_or_data_analysis"
+              ],
+              "derivation_status": "mixed_official_and_methodical",
+              "verification_status": "pending_field_verification",
+              "provenance": {
+                "topic": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "hours": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "aliases": {"status": "pending_enrichment"},
+                "content_summary": {"status": "pending_enrichment"},
+                "learning_outcomes": {"origin": "generated_candidate", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "key_concepts": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "skills": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "interdisciplinary_links": {"origin": "methodical_mapping", "status": "pending_enrichment"},
+                "exam_links": {"origin": "methodical_mapping", "source_key": "FIPI_OGE_2027_PROJECTS", "status": "general_topic_only"},
+                "typical_misconceptions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "common_examples": {"status": "pending_enrichment"},
+                "counterexamples": {"status": "pending_enrichment"},
+                "essential_questions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "suitable_activities": {"origin": "methodical_mapping", "status": "pending_field_verification"},
+                "source_references": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "source_record_official"}
+              }
             },
             {
               "title": "Традиционные ценности российского общества",
@@ -17019,7 +17045,33 @@
                   "mapping_level": "general_topic",
                   "source_key": "FIPI_OGE_2027_PROJECTS"
                 }
-              ]
+              ],
+              "suitable_activities": [
+                "case_analysis",
+                "concept_sort",
+                "example_counterexample",
+                "mini_debate",
+                "source_or_data_analysis"
+              ],
+              "derivation_status": "mixed_official_and_methodical",
+              "verification_status": "pending_field_verification",
+              "provenance": {
+                "topic": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "hours": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "aliases": {"status": "pending_enrichment"},
+                "content_summary": {"status": "pending_enrichment"},
+                "learning_outcomes": {"origin": "generated_candidate", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "key_concepts": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "skills": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "interdisciplinary_links": {"origin": "methodical_mapping", "status": "pending_enrichment"},
+                "exam_links": {"origin": "methodical_mapping", "source_key": "FIPI_OGE_2027_PROJECTS", "status": "general_topic_only"},
+                "typical_misconceptions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "common_examples": {"status": "pending_enrichment"},
+                "counterexamples": {"status": "pending_enrichment"},
+                "essential_questions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "suitable_activities": {"origin": "methodical_mapping", "status": "pending_field_verification"},
+                "source_references": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "source_record_official"}
+              }
             },
             {
               "title": "Основы организации государственной власти в России",
@@ -17826,7 +17878,33 @@
                   "mapping_level": "general_topic",
                   "source_key": "FIPI_OGE_2027_PROJECTS"
                 }
-              ]
+              ],
+              "suitable_activities": [
+                "case_analysis",
+                "concept_sort",
+                "example_counterexample",
+                "mini_debate",
+                "source_or_data_analysis"
+              ],
+              "derivation_status": "mixed_official_and_methodical",
+              "verification_status": "pending_field_verification",
+              "provenance": {
+                "topic": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "hours": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "aliases": {"status": "pending_enrichment"},
+                "content_summary": {"status": "pending_enrichment"},
+                "learning_outcomes": {"origin": "generated_candidate", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "key_concepts": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "skills": {"origin": "methodical_mapping", "source_key": "SOCIAL_9_2026", "status": "pending_field_verification"},
+                "interdisciplinary_links": {"origin": "methodical_mapping", "status": "pending_enrichment"},
+                "exam_links": {"origin": "methodical_mapping", "source_key": "FIPI_OGE_2027_PROJECTS", "status": "general_topic_only"},
+                "typical_misconceptions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "common_examples": {"status": "pending_enrichment"},
+                "counterexamples": {"status": "pending_enrichment"},
+                "essential_questions": {"origin": "generated_candidate", "status": "pending_field_verification"},
+                "suitable_activities": {"origin": "methodical_mapping", "status": "pending_field_verification"},
+                "source_references": {"origin": "official_direct", "source_key": "SOCIAL_9_2026", "status": "source_record_official"}
+              }
             },
             {
               "title": "Религия",

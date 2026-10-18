@@ -18,7 +18,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from app.db.session import SessionLocal
 from app.models.catalog import (
@@ -40,6 +40,66 @@ from app.models.catalog import (
 from app.models.entities import Source
 
 DEFAULT_DATASET = Path(__file__).resolve().parents[1] / "data" / "official_curriculum_seed_2026_2027.json"
+
+
+def set_if_available(target, attribute: str, value) -> None:
+    if value is None:
+        return
+    current = getattr(target, attribute)
+    if value or not current:
+        setattr(target, attribute, value)
+
+
+def topic_card_provenance(topic_item: dict, source_key: str) -> dict:
+    fields = {
+        "subject": "official_direct",
+        "grade": "official_direct",
+        "level": "official_direct",
+        "curriculum": "official_direct",
+        "unit": "official_direct",
+        "topic": "official_direct",
+        "hours": "official_direct",
+        "aliases": "official_direct",
+        "learning_outcomes": "generated_candidate",
+        "key_concepts": "methodical_mapping",
+        "skills": "methodical_mapping",
+        "interdisciplinary_links": "methodical_mapping",
+        "exam_links": "methodical_mapping",
+        "typical_misconceptions": "generated_candidate",
+        "common_examples": "generated_candidate",
+        "counterexamples": "generated_candidate",
+        "essential_questions": "generated_candidate",
+        "suitable_activities": "methodical_mapping",
+        "source_references": "official_direct",
+    }
+    present = {
+        "aliases": topic_item.get("aliases"),
+        "learning_outcomes": topic_item.get("outcomes"),
+        "key_concepts": topic_item.get("concepts"),
+        "skills": topic_item.get("skills"),
+        "interdisciplinary_links": topic_item.get("interdisciplinary_links"),
+        "exam_links": topic_item.get("exam_links"),
+        "typical_misconceptions": topic_item.get("typical_misconceptions"),
+        "common_examples": topic_item.get("common_examples"),
+        "counterexamples": topic_item.get("counterexamples"),
+        "essential_questions": topic_item.get("essential_questions"),
+        "suitable_activities": topic_item.get("suitable_activities") or (topic_item.get("default_lesson_blueprint") or {}).get("recommended_activities"),
+        "content_summary": topic_item.get("content_summary"),
+    }
+    result = {
+        name: {
+            "origin": origin,
+            "source_key": source_key,
+            "status": "pending_verification",
+        }
+        for name, origin in fields.items()
+    }
+    for name, value in present.items():
+        if not value:
+            result[name] = {"status": "pending_enrichment"}
+    if not present["content_summary"]:
+        result["content_summary"] = {"status": "pending_enrichment"}
+    return {**result, **(topic_item.get("provenance") or {})}
 
 
 def education_level(grade: int) -> str:
@@ -181,17 +241,24 @@ async def import_topic_card(
 ) -> None:
     source_url = official_source.metadata_json.get("official_url")
 
-    topic.description = topic_item.get("description")
-    topic.default_lesson_blueprint = topic_item.get("default_lesson_blueprint", {})
-    topic.typical_misconceptions = topic_item.get("typical_misconceptions", [])
-    topic.common_examples = topic_item.get("common_examples", [])
-    topic.counterexamples = topic_item.get("counterexamples", [])
-    topic.essential_questions = topic_item.get("essential_questions", [])
-    topic.reflection_patterns = topic_item.get("reflection_patterns", [])
-    topic.assessment_skills = topic_item.get("assessment_skills", [])
-    topic.difficulty_level = topic_item.get("difficulty_level")
-    topic.abstraction_level = topic_item.get("abstraction_level")
-    topic.prerequisite_topic_ids = topic_item.get("prerequisite_topic_ids", [])
+    set_if_available(topic, "description", topic_item.get("description"))
+    set_if_available(topic, "content_summary", topic_item.get("content_summary"))
+    suitable_activities = topic_item.get("suitable_activities") or (topic_item.get("default_lesson_blueprint") or {}).get("recommended_activities")
+    set_if_available(topic, "suitable_activities", suitable_activities)
+    if topic_item.get("provenance"):
+        topic.provenance = {
+            **(topic.provenance or {}),
+            **topic_card_provenance(topic_item, official_source.source_key or official_source.metadata_json.get("catalog_key", "")),
+        }
+        topic.derivation_status = topic_item.get("derivation_status", "methodical_mapping")
+        topic.verification_status = topic_item.get("verification_status", "pending_verification")
+    for attribute in (
+        "default_lesson_blueprint", "typical_misconceptions", "common_examples",
+        "counterexamples", "essential_questions", "reflection_patterns",
+        "assessment_skills", "difficulty_level", "abstraction_level",
+        "prerequisite_topic_ids",
+    ):
+        set_if_available(topic, attribute, topic_item.get(attribute))
 
     for priority, item in enumerate(topic_item.get("outcomes", []), start=1):
         outcome = await get_or_create_outcome(session, subject, grade, item, source_url)
@@ -238,43 +305,45 @@ async def import_topic_card(
         else:
             link.priority = priority
 
-    # These two lists are replaced on every import so the dataset remains authoritative.
-    await session.execute(delete(InterdisciplinaryLink).where(InterdisciplinaryLink.topic_id == topic.id))
     for item in topic_item.get("interdisciplinary_links", []):
-        session.add(
-            InterdisciplinaryLink(
-                topic_id=topic.id,
-                related_subject=item["related_subject"],
-                related_topic=item.get("related_topic"),
-                link_type=item.get("link_type"),
-                description=item["description"],
-                strength=item.get("strength", "optional"),
+        link = await session.scalar(
+            select(InterdisciplinaryLink).where(
+                InterdisciplinaryLink.topic_id == topic.id,
+                InterdisciplinaryLink.related_subject == item["related_subject"],
+                InterdisciplinaryLink.related_topic == item.get("related_topic"),
+                InterdisciplinaryLink.link_type == item.get("link_type"),
+                InterdisciplinaryLink.description == item["description"],
             )
         )
-        counts["interdisciplinary_links"] += 1
+        if link is None:
+            link = InterdisciplinaryLink(topic_id=topic.id, related_subject=item["related_subject"], description=item["description"])
+            session.add(link)
+            counts["interdisciplinary_links"] += 1
+        link.related_topic = item.get("related_topic")
+        link.link_type = item.get("link_type")
+        link.strength = item.get("strength", "optional")
 
-    await session.execute(delete(ExamLink).where(ExamLink.topic_id == topic.id))
     for item in topic_item.get("exam_links", []):
         source_key = item.get("source_key")
         exam_source = source_map.get(source_key) if source_key else None
-        exam_meta = {
-            "mapping_level": item.get("mapping_level", "general_topic"),
-            "source_key": source_key,
-            "source_url": exam_source.metadata_json.get("official_url") if exam_source else None,
-            "status": "project" if item.get("exam_year") == 2027 else None,
-        }
-        session.add(
-            ExamLink(
-                topic_id=topic.id,
-                exam=item["exam"],
-                exam_year=item.get("exam_year"),
-                exam_section=item.get("exam_section"),
-                task_types=item.get("task_types", []),
-                codifier_reference=item.get("codifier_reference"),
-                importance=item.get("importance", "normal"),
+        link = await session.scalar(
+            select(ExamLink).where(
+                ExamLink.topic_id == topic.id,
+                ExamLink.exam == item["exam"],
+                ExamLink.exam_year == item.get("exam_year"),
+                ExamLink.exam_section == item.get("exam_section"),
+                ExamLink.codifier_reference == item.get("codifier_reference"),
             )
         )
-        counts["exam_links"] += 1
+        if link is None:
+            link = ExamLink(topic_id=topic.id, exam=item["exam"])
+            session.add(link)
+            counts["exam_links"] += 1
+        link.exam_year = item.get("exam_year")
+        link.exam_section = item.get("exam_section")
+        link.task_types = item.get("task_types", [])
+        link.codifier_reference = item.get("codifier_reference")
+        link.importance = item.get("importance", "normal")
         if exam_source is not None:
             source_link = await session.scalar(
                 select(TopicSource).where(
@@ -374,8 +443,8 @@ async def import_dataset(path: Path) -> dict:
                     session.add(unit)
                     await session.flush()
                 unit.title = unit_item["title"]
-                unit.recommended_hours = unit_item.get("hours")
-                unit.description = unit_item.get("description")
+                set_if_available(unit, "recommended_hours", unit_item.get("hours"))
+                set_if_available(unit, "description", unit_item.get("description"))
                 unit.source_reference = official_source.metadata_json.get("official_url")
                 unit.review_status = item.get("review_status", "draft")
                 counts["units"] += 1
@@ -388,9 +457,9 @@ async def import_dataset(path: Path) -> dict:
                         topic = Topic(unit_id=unit.id, title=topic_item["title"], order_index=topic_index)
                         session.add(topic)
                     topic.title = topic_item["title"]
-                    topic.aliases = topic_item.get("aliases", [])
-                    topic.recommended_hours = topic_item.get("hours")
-                    topic.topic_type = topic_item.get("topic_type", "new_content")
+                    set_if_available(topic, "aliases", topic_item.get("aliases"))
+                    set_if_available(topic, "recommended_hours", topic_item.get("hours"))
+                    set_if_available(topic, "topic_type", topic_item.get("topic_type"))
                     topic.review_status = item.get("review_status", "draft")
                     topic.metadata_json = {
                         **(topic.metadata_json or {}),
