@@ -94,12 +94,26 @@ def test_catalog_api_mapper_emits_topic_card_contract_and_source_reference():
         id=uuid4(), outcome_type="subject", outcome_subtype="conceptual",
         text="Тестовый outcome из seed", source_reference="https://edsoo.ru/official.pdf",
     )
+    skill = SimpleNamespace(id=uuid4(), code="identify", name="Определять", category="cognitive")
+    interdisciplinary = SimpleNamespace(
+        related_subject="HISTORY", related_topic=None, link_type="historical_context",
+        description="Связь с историческим контекстом", strength="useful",
+    )
+    exam = SimpleNamespace(
+        exam="OGE_SOCIAL_STUDIES", exam_year=2027, exam_section=None,
+        task_types=[], codifier_reference=None, importance="normal",
+    )
+    outcome_link = SimpleNamespace(outcome_id=outcome.id, priority=1)
+    concept_link = SimpleNamespace(concept_id=concept.id, importance="required")
+    skill_link = SimpleNamespace(skill_id=skill.id, priority=1)
+    source_link = SimpleNamespace(
+        source_id=source.id, source_role="official_program", section="Человек и общество",
+        pages=None, priority=1,
+    )
     topic = SimpleNamespace(
-        id=topic_id, unit=unit, outcomes=[SimpleNamespace(outcome=outcome, priority=1)],
-        concepts=[SimpleNamespace(concept=concept, importance="required")],
-        skills=[], sources=[SimpleNamespace(source=source, source_role="official_program", section="Человек и общество", pages=None, priority=1)],
-        interdisciplinary_links=[], exam_links=[], recommended_hours=2, aliases=[],
+        id=topic_id, unit_id=unit.id,
         title="Как устроено общество", order_index=1, topic_type="new_content",
+        recommended_hours=2, aliases=[],
         description=None, content_summary=None, suitable_activities=["case_analysis"],
         provenance={"topic": {"origin": "official_direct"}},
         derivation_status="mixed_official_and_methodical",
@@ -111,14 +125,41 @@ def test_catalog_api_mapper_emits_topic_card_contract_and_source_reference():
     )
 
     class Result:
+        def __init__(self, index):
+            self.index = index
+
         def scalar_one_or_none(self):
             return topic
 
-    class Session:
-        async def execute(self, _statement):
-            return Result()
+        def one_or_none(self):
+            return unit, curriculum, subject, grade
 
-    card = asyncio.run(CurriculumCatalogService().get_topic_card(Session(), topic_id))
+        def all(self):
+            return {
+                2: [(outcome_link, outcome)],
+                3: [(concept_link, concept)],
+                4: [(skill_link, skill)],
+                5: [(source_link, source)],
+            }.get(self.index, [])
+
+        def scalars(self):
+            values = {6: [interdisciplinary], 7: [exam]}.get(self.index, [])
+            return SimpleNamespace(all=lambda: values)
+
+    class Session:
+        def __init__(self):
+            self.statements = []
+
+        async def execute(self, _statement):
+            from sqlalchemy.dialects import postgresql
+
+            _statement.compile(dialect=postgresql.dialect())
+            index = len(self.statements)
+            self.statements.append(_statement)
+            return Result(index)
+
+    session = Session()
+    card = asyncio.run(CurriculumCatalogService().get_topic_card(session, topic_id))
     validated = TopicCardOut.model_validate(card)
 
     assert validated.subject["code"] == "SOCIAL_STUDIES"
@@ -127,5 +168,33 @@ def test_catalog_api_mapper_emits_topic_card_contract_and_source_reference():
     assert validated.hours == 2
     assert validated.learning_outcomes[0]["text"] == "Тестовый outcome из seed"
     assert validated.key_concepts[0]["term"] == "общество"
+    assert validated.skills[0]["code"] == "identify"
     assert validated.source_references[0]["url"] == "https://edsoo.ru/official.pdf"
+    assert validated.interdisciplinary_links[0]["related_subject"] == "HISTORY"
+    assert validated.exam_links[0]["exam"] == "OGE_SOCIAL_STUDIES"
     assert validated.verification_status == "pending_field_verification"
+    assert len(session.statements) == 8
+
+
+def test_topic_search_query_uses_explicit_join_left_sides():
+    class Result:
+        def all(self):
+            return []
+
+    class Session:
+        async def execute(self, statement):
+            from sqlalchemy.dialects import postgresql
+
+            statement.compile(dialect=postgresql.dialect())
+            return Result()
+
+    rows = asyncio.run(CurriculumCatalogService().search_topics(
+        Session(),
+        q="Как устроено общество",
+        subject_code="SOCIAL_STUDIES",
+        grade=9,
+        level="basic",
+        limit=1,
+    ))
+
+    assert rows == []
