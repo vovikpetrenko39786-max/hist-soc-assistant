@@ -21,6 +21,7 @@ from pathlib import Path
 from sqlalchemy import select
 
 from app.db.session import SessionLocal
+from app.services.topic_card_enrichment import topic_card_provenance
 from app.models.catalog import (
     Concept,
     Curriculum,
@@ -48,58 +49,6 @@ def set_if_available(target, attribute: str, value) -> None:
     current = getattr(target, attribute)
     if value or not current:
         setattr(target, attribute, value)
-
-
-def topic_card_provenance(topic_item: dict, source_key: str) -> dict:
-    fields = {
-        "subject": "official_direct",
-        "grade": "official_direct",
-        "level": "official_direct",
-        "curriculum": "official_direct",
-        "unit": "official_direct",
-        "topic": "official_direct",
-        "hours": "official_direct",
-        "aliases": "official_direct",
-        "learning_outcomes": "generated_candidate",
-        "key_concepts": "methodical_mapping",
-        "skills": "methodical_mapping",
-        "interdisciplinary_links": "methodical_mapping",
-        "exam_links": "methodical_mapping",
-        "typical_misconceptions": "generated_candidate",
-        "common_examples": "generated_candidate",
-        "counterexamples": "generated_candidate",
-        "essential_questions": "generated_candidate",
-        "suitable_activities": "methodical_mapping",
-        "source_references": "official_direct",
-    }
-    present = {
-        "aliases": topic_item.get("aliases"),
-        "learning_outcomes": topic_item.get("outcomes"),
-        "key_concepts": topic_item.get("concepts"),
-        "skills": topic_item.get("skills"),
-        "interdisciplinary_links": topic_item.get("interdisciplinary_links"),
-        "exam_links": topic_item.get("exam_links"),
-        "typical_misconceptions": topic_item.get("typical_misconceptions"),
-        "common_examples": topic_item.get("common_examples"),
-        "counterexamples": topic_item.get("counterexamples"),
-        "essential_questions": topic_item.get("essential_questions"),
-        "suitable_activities": topic_item.get("suitable_activities") or (topic_item.get("default_lesson_blueprint") or {}).get("recommended_activities"),
-        "content_summary": topic_item.get("content_summary"),
-    }
-    result = {
-        name: {
-            "origin": origin,
-            "source_key": source_key,
-            "status": "pending_verification",
-        }
-        for name, origin in fields.items()
-    }
-    for name, value in present.items():
-        if not value:
-            result[name] = {"status": "pending_enrichment"}
-    if not present["content_summary"]:
-        result["content_summary"] = {"status": "pending_enrichment"}
-    return {**result, **(topic_item.get("provenance") or {})}
 
 
 def education_level(grade: int) -> str:

@@ -6,6 +6,10 @@ from uuid import uuid4
 
 from app.schemas.catalog import TopicCardOut
 from app.services.catalog import CurriculumCatalogService
+from app.services.topic_card_enrichment import (
+    apply_topic_card_enrichment,
+    build_topic_card_enrichment,
+)
 from scripts.import_official_curricula import set_if_available, topic_card_provenance
 
 
@@ -22,6 +26,45 @@ def _social_studies_grade_nine():
         for topic in unit["topics"]
     }
     return data, curriculum, topics
+
+
+def _pilot_card(seed_topic, curriculum):
+    source_key = curriculum["official_source"]
+    exam_source_keys = sorted({
+        link["source_key"]
+        for link in seed_topic.get("exam_links", [])
+        if link.get("source_key")
+    })
+    return {
+        "subject": {"code": "SOCIAL_STUDIES"},
+        "grade": 9,
+        "level": "basic",
+        "topic": {
+            "title": seed_topic["title"],
+            "default_lesson_blueprint": seed_topic["default_lesson_blueprint"],
+            "reflection_patterns": seed_topic["reflection_patterns"],
+            "assessment_skills": seed_topic["assessment_skills"],
+            "difficulty_level": seed_topic["difficulty_level"],
+            "abstraction_level": seed_topic["abstraction_level"],
+        },
+        "aliases": seed_topic["aliases"],
+        "key_concepts": [{"term": item["term"]} for item in seed_topic["concepts"]],
+        "skills": seed_topic["skills"],
+        "interdisciplinary_links": seed_topic["interdisciplinary_links"],
+        "exam_links": seed_topic["exam_links"],
+        "learning_outcomes": [{"text": item["text"]} for item in seed_topic["outcomes"]],
+        "typical_misconceptions": seed_topic["typical_misconceptions"],
+        "common_examples": seed_topic["common_examples"],
+        "counterexamples": seed_topic["counterexamples"],
+        "essential_questions": seed_topic["essential_questions"],
+        "source_references": [
+            {"source_key": source_key, "source_role": "official_program"},
+            *[
+                {"source_key": exam_key, "source_role": "exam"}
+                for exam_key in exam_source_keys
+            ],
+        ],
+    }
 
 
 def test_seed_has_three_reference_topic_cards_with_explicit_provenance():
@@ -65,6 +108,186 @@ def test_importer_does_not_clear_existing_data_from_empty_seed_values():
 
     assert target.common_examples == ["existing reviewed example"]
     assert target.description == "existing summary"
+
+
+def test_pilot_enrichment_uses_only_existing_seed_evidence_and_stays_pending_review():
+    _, curriculum, topics = _social_studies_grade_nine()
+    seed_topic = topics["Как устроено общество"][1]
+    topic = SimpleNamespace(
+        content_summary=None,
+        common_examples=[],
+        counterexamples=[],
+        typical_misconceptions=seed_topic["typical_misconceptions"],
+        essential_questions=seed_topic["essential_questions"],
+        suitable_activities=[],
+        default_lesson_blueprint=seed_topic["default_lesson_blueprint"],
+        provenance=seed_topic["provenance"],
+        derivation_status="pending_enrichment",
+        verification_status="pending_field_verification",
+    )
+    card = _pilot_card(seed_topic, curriculum)
+
+    patch = build_topic_card_enrichment(topic, card)
+
+    assert len(patch["content_summary"].split(". ")) in range(3, 7)
+    assert "общество" in patch["content_summary"]
+    assert "взаимосвязанных элементов" in patch["content_summary"]
+    assert len(patch["common_examples"]) == 3
+    assert len(patch["counterexamples"]) == 2
+    assert len(patch["typical_misconceptions"]) == 3
+    assert len(patch["essential_questions"]) == 3
+    assert len(patch["suitable_activities"]) == 4
+    assert all({"activity", "purpose", "student_action"} <= row.keys() for row in patch["suitable_activities"])
+    assert patch["provenance"]["content_summary"]["origin"] == "generated_candidate"
+    assert patch["provenance"]["content_summary"]["status"] == "pending_review"
+    assert patch["provenance"]["common_examples"]["origin"] == "methodical_mapping"
+    assert patch["provenance"]["counterexamples"]["origin"] == "methodical_mapping"
+    assert patch["provenance"]["typical_misconceptions"]["origin"] == "generated_candidate"
+    assert patch["provenance"]["essential_questions"]["origin"] == "generated_candidate"
+    assert patch["provenance"]["suitable_activities"]["origin"] == "methodical_mapping"
+    assert patch["provenance"]["learning_outcomes"]["origin"] == "generated_candidate"
+    assert patch["provenance"]["key_concepts"]["origin"] == "methodical_mapping"
+    assert patch["provenance"]["exam_links"]["source_key"] == "FIPI_OGE_2027_PROJECTS"
+    assert patch["provenance"]["source_references"]["origin"] == "official_direct"
+    assert patch["provenance"]["default_lesson_blueprint"]["role"] == "system_fallback"
+    assert patch["provenance"]["default_lesson_blueprint"]["specific_to_topic"] is False
+    assert patch["provenance"]["reflection_patterns"]["role"] == "system_fallback"
+    assert patch["provenance"]["reflection_patterns"]["specific_to_topic"] is False
+    assert patch["derivation_status"] == "mixed_official_and_methodical"
+    assert patch["verification_status"] == "pending_review"
+    apply_topic_card_enrichment(topic, patch)
+    assert build_topic_card_enrichment(topic, card) == {}
+
+
+def test_pilot_enrichment_is_idempotent_and_does_not_overwrite_existing_fields():
+    _, curriculum, topics = _social_studies_grade_nine()
+    seed_topic = topics["Как устроено общество"][1]
+    summary = "Reviewed local summary"
+    topic = SimpleNamespace(
+        content_summary=summary,
+        common_examples=["reviewed"],
+        counterexamples=["reviewed"],
+        typical_misconceptions=["reviewed"],
+        essential_questions=["reviewed"],
+        suitable_activities=["existing_activity"],
+        default_lesson_blueprint=seed_topic["default_lesson_blueprint"],
+        provenance={
+            key: {"origin": "methodical_mapping", "status": "reviewed"}
+            for key in (
+                "content_summary",
+                "common_examples",
+                "counterexamples",
+                "typical_misconceptions",
+                "essential_questions",
+                "suitable_activities",
+            )
+        } | {
+            "default_lesson_blueprint": {
+                "origin": "methodical_mapping",
+                "status": "pending_review",
+                "role": "system_fallback",
+                "specific_to_topic": False,
+            },
+            "reflection_patterns": {
+                "origin": "methodical_mapping",
+                "status": "pending_review",
+                "role": "system_fallback",
+                "specific_to_topic": False,
+            },
+        },
+        derivation_status="mixed_official_and_methodical",
+        verification_status="verified",
+    )
+    card = _pilot_card(seed_topic, curriculum)
+
+    patch = build_topic_card_enrichment(topic, card)
+
+    assert "content_summary" not in patch
+    assert "common_examples" not in patch
+    assert "counterexamples" not in patch
+    assert "typical_misconceptions" not in patch
+    assert "essential_questions" not in patch
+    assert "suitable_activities" not in patch
+    assert topic.content_summary == summary
+    assert topic.suitable_activities == ["existing_activity"]
+    assert topic.common_examples == ["reviewed"]
+    assert topic.counterexamples == ["reviewed"]
+    assert topic.typical_misconceptions == ["reviewed"]
+    assert topic.essential_questions == ["reviewed"]
+    assert topic.verification_status == "verified"
+
+
+def test_pilot_enrichment_requires_linked_concepts_and_outcomes_for_summary():
+    topic = SimpleNamespace(
+        content_summary=None,
+        suitable_activities=[],
+        default_lesson_blueprint={},
+        provenance={},
+        derivation_status="pending_enrichment",
+        verification_status="pending_verification",
+    )
+
+    patch = build_topic_card_enrichment(
+        topic,
+        {
+            "subject": {"code": "SOCIAL_STUDIES"},
+            "grade": 9,
+            "level": "basic",
+            "topic": {"title": "Как устроено общество"},
+            "key_concepts": [],
+            "learning_outcomes": [],
+            "source_references": [],
+        },
+    )
+
+    assert "content_summary" not in patch
+    assert "suitable_activities" not in patch
+    assert patch == {}
+
+
+def test_pilot_enrichment_does_not_summarize_without_an_official_source_link():
+    topic = SimpleNamespace(
+        content_summary=None,
+        suitable_activities=[],
+        default_lesson_blueprint={},
+        provenance={},
+        derivation_status="pending_enrichment",
+        verification_status="pending_verification",
+    )
+    card = {
+        "subject": {"code": "SOCIAL_STUDIES"},
+        "grade": 9,
+        "level": "basic",
+        "topic": {"title": "Как устроено общество"},
+        "key_concepts": [{"term": "общество"}],
+        "learning_outcomes": [{"text": "связанный результат"}],
+        "source_references": [],
+    }
+
+    patch = build_topic_card_enrichment(topic, card)
+
+    assert patch == {}
+
+
+def test_pilot_enrichment_is_scoped_to_the_single_pilot_card():
+    _, curriculum, topics = _social_studies_grade_nine()
+    seed_topic = topics["Как устроено общество"][1]
+    topic = SimpleNamespace(
+        content_summary=None,
+        common_examples=[],
+        counterexamples=[],
+        typical_misconceptions=[],
+        essential_questions=[],
+        suitable_activities=[],
+        default_lesson_blueprint={},
+        provenance={},
+        derivation_status="pending_enrichment",
+        verification_status="pending_verification",
+    )
+    card = _pilot_card(seed_topic, curriculum)
+    card["grade"] = 10
+
+    assert build_topic_card_enrichment(topic, card) == {}
 
 
 def test_catalog_api_mapper_emits_topic_card_contract_and_source_reference():

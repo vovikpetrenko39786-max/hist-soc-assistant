@@ -110,6 +110,31 @@ Runtime SOP
 Lesson / Assessment / Worksheet Generator
 ```
 
+### Pilot enrichment/backfill
+
+The enrichment command operates only on the existing `SOCIAL_STUDIES`, grade 9,
+`basic`, `Как устроено общество` Topic Card. It uses its existing learning
+outcomes, concepts, lesson blueprint, and source links; it does not import the
+dataset or modify catalog relationships. The default is a read-only dry run:
+
+```bash
+python -m scripts.enrich_topic_card
+```
+
+To persist the enrichment in the database configured for the process, pass
+`--apply` explicitly:
+
+```bash
+python -m scripts.enrich_topic_card --apply
+```
+
+The generated summary and candidate pedagogical examples/questions are marked
+`generated_candidate` or `methodical_mapping` and remain `pending_review`.
+Existing generic reflection patterns and lesson blueprints are retained and
+identified in provenance as system fallbacks, not topic-specific enrichment.
+Reviewed fields are not overwritten, and verification is never upgraded to
+`verified`.
+
 ## Статистика v0.4
 
 Актуальные значения проверяются скриптом:
