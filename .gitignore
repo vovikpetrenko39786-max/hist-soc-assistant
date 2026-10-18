@@ -10,3 +10,9 @@ outputs/
 exports/
 *.log
 .DS_Store
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
