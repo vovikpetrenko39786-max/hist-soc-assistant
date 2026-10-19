@@ -68,8 +68,37 @@ def topic_card():
     }
 
 
+def retrieval():
+    return {
+        "query": "Мировой экономический кризис",
+        "mode": "hybrid",
+        "strict_source": False,
+        "warnings": [],
+        "hits": [
+            {
+                "chunk_id": "11111111-1111-1111-1111-111111111111",
+                "source_id": "22222222-2222-2222-2222-222222222222",
+                "source_key": "history-source",
+                "source_title": "История. Учебный источник",
+                "url": "https://example.test/history.pdf",
+                "source_status": "secondary",
+                "section": "Мировой экономический кризис",
+                "page_pdf_start": 10,
+                "page_pdf_end": 10,
+                "page_print_start": 8,
+                "page_print_end": 8,
+                "quote_safe": False,
+                "snippet": (
+                    "Экономический кризис сопровождался "
+                    "ростом безработицы и сокращением производства."
+                ),
+            }
+        ],
+    }
+
+
 def test_context_contains_only_allowed_topic_evidence():
-    context = build_topic_enrichment_context(topic_card())
+    context = build_topic_enrichment_context(topic_card(), retrieval())
 
     assert context["subject"]["code"] == "HISTORY"
     assert context["grade"] == 10
@@ -96,6 +125,10 @@ def test_context_contains_only_allowed_topic_evidence():
     assert "exam_links" not in context
 
     assert "url" not in context["official_sources"][0]
+    assert context["retrieved_evidence"][0]["snippet"].startswith(
+        "Экономический кризис"
+    )
+    assert "url" not in context["retrieved_evidence"][0]
     assert "definition_reference" not in context["key_concepts"][0]
     assert (
         "source_reference"
@@ -152,7 +185,7 @@ def test_service_generates_and_validates_artifact():
     artifact = asyncio.run(
         TopicEnrichmentGenerationService(
             FakeProvider()
-        ).generate(topic_card())
+        ).generate(topic_card(), retrieval())
     )
 
     assert artifact.content_summary.startswith("Кризис")
@@ -168,7 +201,7 @@ def test_context_rejects_topic_without_official_evidence():
         TopicEnrichmentGenerationError,
         match="official program source",
     ):
-        build_topic_enrichment_context(card)
+        build_topic_enrichment_context(card, retrieval())
 
 
 def test_service_rejects_examples_that_only_repeat_key_concepts():
@@ -195,7 +228,7 @@ def test_service_rejects_examples_that_only_repeat_key_concepts():
         asyncio.run(
             TopicEnrichmentGenerationService(
                 FakeProvider()
-            ).generate(topic_card())
+            ).generate(topic_card(), retrieval())
         )
 
 
@@ -229,5 +262,17 @@ def test_service_rejects_unavailable_learning_material():
         asyncio.run(
             TopicEnrichmentGenerationService(
                 FakeProvider()
-            ).generate(topic_card())
+            ).generate(topic_card(), retrieval())
+        )
+
+
+
+def test_context_rejects_missing_retrieved_evidence():
+    with pytest.raises(
+        TopicEnrichmentGenerationError,
+        match="requires retrieved evidence",
+    ):
+        build_topic_enrichment_context(
+            topic_card(),
+            {"hits": []},
         )

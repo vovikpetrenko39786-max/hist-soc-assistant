@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any, Protocol
 
 from app.schemas.generation import TopicEnrichmentArtifact
+from app.services.generation_context import GroundedContextBuilder
 
 
 class TopicEnrichmentGenerationError(RuntimeError):
@@ -89,6 +90,7 @@ def _validate_generated_artifact(
 
 def build_topic_enrichment_context(
     card: Mapping[str, Any],
+    retrieval: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     subject = card.get("subject") or {}
     topic = card.get("topic") or {}
@@ -108,6 +110,28 @@ def build_topic_enrichment_context(
         item
         for item in (card.get("available_materials") or [])
         if isinstance(item, Mapping)
+    ]
+
+    source_manifest = GroundedContextBuilder.source_manifest(
+        dict(retrieval or {})
+    )
+    retrieved_evidence = [
+        {
+            "chunk_id": item.get("chunk_id"),
+            "source_title": (
+                item.get("source_title")
+                or item.get("title")
+            ),
+            "status": item.get("status"),
+            "section": item.get("section"),
+            "page_pdf_start": item.get("page_pdf_start"),
+            "page_pdf_end": item.get("page_pdf_end"),
+            "page_print_start": item.get("page_print_start"),
+            "page_print_end": item.get("page_print_end"),
+            "snippet": item.get("snippet"),
+        }
+        for item in source_manifest
+        if item.get("snippet")
     ]
 
     official_sources = [
@@ -139,6 +163,11 @@ def build_topic_enrichment_context(
     if not official_sources:
         raise TopicEnrichmentGenerationError(
             "Topic Card has no official program source."
+        )
+
+    if not retrieved_evidence:
+        raise TopicEnrichmentGenerationError(
+            "Topic enrichment requires retrieved evidence."
         )
 
     return {
@@ -185,6 +214,7 @@ def build_topic_enrichment_context(
             }
             for item in available_materials
         ],
+        "retrieved_evidence": retrieved_evidence,
         "official_sources": [
             {
                 "title": item.get("title"),
@@ -203,8 +233,12 @@ class TopicEnrichmentGenerationService:
     async def generate(
         self,
         card: Mapping[str, Any],
+        retrieval: Mapping[str, Any],
     ) -> TopicEnrichmentArtifact:
-        context = build_topic_enrichment_context(card)
+        context = build_topic_enrichment_context(
+            card,
+            retrieval,
+        )
 
         raw = await self.provider.generate_topic_enrichment(context)
 

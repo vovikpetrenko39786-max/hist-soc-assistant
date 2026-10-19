@@ -140,6 +140,40 @@ def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
             assert current_topic_id == topic_id
             return card
 
+    class FakeRetrieval:
+        async def retrieve(self, current_session, request):
+            assert current_session is session
+            assert request.topic_id == topic_id
+            assert request.subject == "HISTORY"
+            assert request.grade == 10
+            return {
+                "query": request.query,
+                "mode": request.mode,
+                "strict_source": False,
+                "warnings": [],
+                "hits": [
+                    {
+                        "chunk_id": (
+                            "11111111-1111-1111-1111-111111111111"
+                        ),
+                        "source_id": (
+                            "22222222-2222-2222-2222-222222222222"
+                        ),
+                        "source_key": "official-source",
+                        "source_title": "Official program",
+                        "url": None,
+                        "source_status": "official",
+                        "section": "Test section",
+                        "page_pdf_start": 1,
+                        "page_pdf_end": 1,
+                        "page_print_start": None,
+                        "page_print_end": None,
+                        "quote_safe": False,
+                        "snippet": "Grounded evidence for the test topic.",
+                    }
+                ],
+            }
+
     class FakeProvider:
         async def generate_topic_enrichment(self, context):
             return {
@@ -161,6 +195,11 @@ def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
         script,
         "get_generation_provider",
         lambda: FakeProvider(),
+    )
+    monkeypatch.setattr(
+        script,
+        "RetrievalService",
+        lambda: FakeRetrieval(),
     )
 
     result = asyncio.run(

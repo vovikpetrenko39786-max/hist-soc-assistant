@@ -9,8 +9,10 @@ from uuid import UUID
 
 from app.db.session import SessionLocal
 from app.models.catalog import Topic
+from app.schemas.retrieval import RetrievalRequest
 from app.services.catalog import CurriculumCatalogService
 from app.services.llm_provider import get_generation_provider
+from app.services.retrieval import RetrievalService
 from app.services.topic_enrichment_generation import (
     TopicEnrichmentGenerationService,
 )
@@ -77,9 +79,30 @@ async def enrich_topic(
                 await session.rollback()
                 return 1
 
+            curriculum = card.get("curriculum") or {}
+            retrieval = await RetrievalService().retrieve(
+                session,
+                RetrievalRequest(
+                    query=card["topic"]["title"],
+                    mode="hybrid",
+                    subject=card["subject"]["code"],
+                    grade=card.get("grade"),
+                    level=(
+                        curriculum.get("level")
+                        or card.get("level")
+                    ),
+                    topic_id=topic.id,
+                    top_k=8,
+                    candidate_k=40,
+                ),
+            )
+
             artifact = await TopicEnrichmentGenerationService(
                 provider
-            ).generate(card)
+            ).generate(
+                card,
+                retrieval,
+            )
 
             await session.rollback()
 
