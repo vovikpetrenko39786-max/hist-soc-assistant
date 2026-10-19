@@ -169,7 +169,7 @@ def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
                         "page_print_start": None,
                         "page_print_end": None,
                         "quote_safe": False,
-                        "snippet": "Grounded evidence for the test topic.",
+                        "snippet": "Grounded evidence for concept and the test topic.",
                     }
                 ],
             }

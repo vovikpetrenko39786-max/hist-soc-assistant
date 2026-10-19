@@ -45,6 +45,108 @@ def _normalize_label(value: str | None) -> str:
     )
 
 
+_TOKEN_RE = re.compile(
+    r"[A-Za-zА-Яа-яЁё0-9]+",
+    re.UNICODE,
+)
+
+
+def _token_key(token: str) -> str:
+    token = token.casefold()
+    if len(token) >= 7:
+        return token[:5]
+    if len(token) >= 5:
+        return token[:4]
+    return token
+
+
+def _concept_keys(value: str | None) -> set[str]:
+    tokens = _TOKEN_RE.findall(value or "")
+    substantial = [
+        token
+        for token in tokens
+        if len(token) >= 4
+    ]
+    selected = substantial or [
+        token
+        for token in tokens
+        if len(token) >= 2
+    ]
+    return {
+        _token_key(token)
+        for token in selected
+    }
+
+
+def _evidence_concept_coverage(
+    snippet: str,
+    concept_terms: list[str],
+) -> int:
+    snippet_keys = {
+        _token_key(token)
+        for token in _TOKEN_RE.findall(snippet)
+    }
+
+    coverage = 0
+    for term in concept_terms:
+        keys = _concept_keys(term)
+        if not keys:
+            continue
+
+        overlap = len(keys & snippet_keys)
+        required = 1 if len(keys) == 1 else 2
+
+        if overlap >= required:
+            coverage += 1
+
+    return coverage
+
+
+def _select_relevant_source_manifest(
+    card: Mapping[str, Any],
+    source_manifest: list[dict],
+) -> list[dict]:
+    concepts = (
+        card.get("key_concepts")
+        or card.get("concepts")
+        or []
+    )
+    concept_terms = [
+        str(item.get("term"))
+        for item in concepts
+        if item.get("term")
+    ]
+
+    scored = [
+        (
+            _evidence_concept_coverage(
+                item.get("snippet") or "",
+                concept_terms,
+            ),
+            index,
+            item,
+        )
+        for index, item in enumerate(source_manifest)
+        if item.get("snippet")
+    ]
+
+    if not scored:
+        return []
+
+    max_coverage = max(
+        coverage
+        for coverage, _, _ in scored
+    )
+
+    threshold = 2 if max_coverage >= 2 else 1
+
+    return [
+        item
+        for coverage, _, item in scored
+        if coverage >= threshold
+    ][:6]
+
+
 def _validate_generated_artifact(
     artifact: TopicEnrichmentArtifact,
     context: Mapping[str, Any],
@@ -115,6 +217,10 @@ def build_topic_enrichment_context(
     source_manifest = GroundedContextBuilder.source_manifest(
         dict(retrieval or {})
     )
+    relevant_manifest = _select_relevant_source_manifest(
+        card,
+        source_manifest,
+    )
     retrieved_evidence = [
         {
             "chunk_id": item.get("chunk_id"),
@@ -130,8 +236,7 @@ def build_topic_enrichment_context(
             "page_print_end": item.get("page_print_end"),
             "snippet": item.get("snippet"),
         }
-        for item in source_manifest
-        if item.get("snippet")
+        for item in relevant_manifest
     ]
 
     official_sources = [

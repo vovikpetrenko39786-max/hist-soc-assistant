@@ -89,7 +89,7 @@ def retrieval():
                 "page_print_end": 8,
                 "quote_safe": False,
                 "snippet": (
-                    "Экономический кризис сопровождался "
+                    "Великая депрессия сопровождалась "
                     "ростом безработицы и сокращением производства."
                 ),
             }
@@ -126,7 +126,7 @@ def test_context_contains_only_allowed_topic_evidence():
 
     assert "url" not in context["official_sources"][0]
     assert context["retrieved_evidence"][0]["snippet"].startswith(
-        "Экономический кризис"
+        "Великая депрессия"
     )
     assert "url" not in context["retrieved_evidence"][0]
     assert "definition_reference" not in context["key_concepts"][0]
@@ -276,3 +276,65 @@ def test_context_rejects_missing_retrieved_evidence():
             topic_card(),
             {"hits": []},
         )
+
+
+
+def test_context_filters_single_concept_retrieval_noise():
+    card = topic_card()
+    card["key_concepts"] = [
+        {
+            "term": "мировой экономический кризис",
+            "importance": "required",
+        },
+        {
+            "term": "Великая депрессия",
+            "importance": "required",
+        },
+        {
+            "term": "Новый курс Ф. Д. Рузвельта",
+            "importance": "required",
+        },
+    ]
+
+    base_hit = retrieval()["hits"][0]
+
+    relevant_hit = {
+        **base_hit,
+        "chunk_id": "33333333-3333-3333-3333-333333333333",
+        "snippet": (
+            "Мировой экономический кризис 1929–1933 гг. "
+            "и начало Великой депрессии. "
+            "Новый курс Ф. Д. Рузвельта."
+        ),
+    }
+
+    noise_hit = {
+        **base_hit,
+        "chunk_id": "44444444-4444-4444-4444-444444444444",
+        "page_pdf_start": 101,
+        "page_pdf_end": 102,
+        "snippet": (
+            "Мировой экономический кризис 2008 г. "
+            "Социальная политика и занятость населения."
+        ),
+    }
+
+    context = build_topic_enrichment_context(
+        card,
+        {
+            "hits": [
+                noise_hit,
+                relevant_hit,
+            ]
+        },
+    )
+
+    assert len(context["retrieved_evidence"]) == 1
+    assert (
+        context["retrieved_evidence"][0]["chunk_id"]
+        == relevant_hit["chunk_id"]
+    )
+    assert (
+        "2008"
+        not in context["retrieved_evidence"][0]["snippet"]
+    )
