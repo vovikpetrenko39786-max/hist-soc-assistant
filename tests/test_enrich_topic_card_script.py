@@ -2,6 +2,8 @@ import asyncio
 from types import SimpleNamespace
 from uuid import UUID
 
+import pytest
+
 import scripts.enrich_topic_card as script
 from app.models.catalog import Topic
 
@@ -78,9 +80,11 @@ def test_enrich_topic_selects_topic_by_uuid_and_dry_runs(monkeypatch):
     assert topic.content_summary == "Enriched summary"
 
 
-def test_generate_mode_uses_provider_and_rolls_back(
+@pytest.mark.parametrize("apply", [False, True])
+def test_generate_mode_respects_explicit_apply(
     monkeypatch,
     capsys,
+    apply,
 ):
     topic_id = UUID("3b5a578c-4352-4ca6-bd79-19d48aed5365")
 
@@ -209,15 +213,14 @@ def test_generate_mode_uses_provider_and_rolls_back(
     result = asyncio.run(
         script.enrich_topic(
             topic_id=topic_id,
-            apply=False,
+            apply=apply,
             generate=True,
         )
     )
 
     assert result == 0
-    assert session.rolled_back is True
-    assert session.committed is False
-    assert topic.content_summary is None
+    assert session.committed is apply
+    assert session.rolled_back is (not apply)
 
     output = capsys.readouterr().out
 
@@ -226,4 +229,19 @@ def test_generate_mode_uses_provider_and_rolls_back(
     assert '"pending_review"' in output
     assert '"generated_candidate"' in output
     assert '"source_chunk_ids"' in output
-    assert "proposed patch was not committed" in output
+
+    if apply:
+        assert topic.content_summary == "Generated summary"
+        assert topic.verification_status == "pending_review"
+        assert (
+            topic.provenance["content_summary"]["status"]
+            == "pending_review"
+        )
+        assert (
+            topic.provenance["content_summary"]["origin"]
+            == "generated_candidate"
+        )
+        assert "Generated enrichment changes committed." in output
+    else:
+        assert topic.content_summary is None
+        assert "proposed patch was not committed" in output

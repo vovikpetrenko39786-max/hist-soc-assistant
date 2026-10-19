@@ -127,7 +127,22 @@ async def enrich_topic(
                 )
             )
 
-            await session.rollback()
+            if not proposed_patch:
+                await session.rollback()
+                print(
+                    "Generated enrichment produced no applicable changes.",
+                    file=sys.stderr,
+                )
+                return 1
+
+            if apply:
+                apply_topic_card_enrichment(
+                    topic,
+                    proposed_patch,
+                )
+                await session.commit()
+            else:
+                await session.rollback()
 
             print(
                 json.dumps(
@@ -146,8 +161,12 @@ async def enrich_topic(
                 )
             )
             print(
-                "Generated dry run only; "
-                "proposed patch was not committed."
+                "Generated enrichment changes committed."
+                if apply
+                else (
+                    "Generated dry run only; "
+                    "proposed patch was not committed."
+                )
             )
             return 0
 
@@ -200,7 +219,7 @@ def main() -> None:
         "--apply",
         action="store_true",
         help=(
-            "Persist manual enrichment changes to the configured database; "
+            "Persist enrichment changes to the configured database; "
             "without this flag the transaction is rolled back."
         ),
     )
@@ -209,14 +228,11 @@ def main() -> None:
         action="store_true",
         help=(
             "Generate Topic Card enrichment with the configured provider. "
-            "This mode is always dry-run and never writes to the database."
+            "Combine with --apply to persist the grounded generated patch."
         ),
     )
 
     args = parser.parse_args()
-
-    if args.generate and args.apply:
-        parser.error("--generate cannot be combined with --apply")
 
     raise SystemExit(
         asyncio.run(
