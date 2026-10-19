@@ -598,3 +598,171 @@ def test_history_crisis_topic_can_be_enriched():
     assert patch["provenance"]["typical_misconceptions"]["status"] == "pending_review"
     assert patch["provenance"]["essential_questions"]["status"] == "pending_review"
     assert patch["derivation_status"] == "mixed_official_and_methodical"
+
+
+def test_generated_enrichment_builds_grounded_pending_review_patch():
+    from types import SimpleNamespace
+
+    from app.services.topic_card_enrichment import (
+        LLM_ENRICHMENT_VERSION,
+        build_generated_topic_card_enrichment,
+    )
+
+    topic = SimpleNamespace(
+        content_summary=None,
+        common_examples=[],
+        counterexamples=[],
+        typical_misconceptions=["Проверенное заблуждение"],
+        essential_questions=[],
+        suitable_activities=[],
+        default_lesson_blueprint={},
+        provenance={
+            "typical_misconceptions": {
+                "origin": "generated_candidate",
+                "status": "verified",
+            }
+        },
+        derivation_status="pending_enrichment",
+        verification_status="pending_verification",
+    )
+
+    card = {
+        "subject": {"code": "HISTORY"},
+        "grade": 10,
+        "level": "basic",
+        "topic": {
+            "title": "Тестовая историческая тема",
+            "default_lesson_blueprint": {},
+        },
+        "aliases": [],
+        "key_concepts": [
+            {
+                "term": "ключевое понятие",
+                "importance": "required",
+            }
+        ],
+        "learning_outcomes": [
+            {
+                "text": "Объяснять исторический процесс.",
+            }
+        ],
+        "skills": [],
+        "interdisciplinary_links": [],
+        "exam_links": [],
+        "common_examples": [],
+        "counterexamples": [],
+        "essential_questions": [],
+        "source_references": [
+            {
+                "source_key": "HISTORY_OFFICIAL",
+                "source_role": "official_program",
+            }
+        ],
+    }
+
+    enrichment = {
+        "content_summary": "Сгенерированное содержание темы.",
+        "common_examples": [
+            {
+                "title": "Пример",
+                "description": "Описание примера.",
+            }
+        ],
+        "counterexamples": [
+            {
+                "title": "Контрпример",
+                "description": "Описание контрпримера.",
+            }
+        ],
+        "typical_misconceptions": [
+            "Новое заблуждение, которое не должно заменить verified."
+        ],
+        "essential_questions": [
+            "Как объяснить исторический процесс?"
+        ],
+        "suitable_activities": [
+            {
+                "activity": "Обсуждение",
+                "purpose": "Закрепить материал.",
+                "student_action": "Сформулировать вывод.",
+            }
+        ],
+    }
+
+    chunk_ids = [
+        "b4524479-a1c3-4c09-9dfb-bbc467d149e8",
+        "890bf23c-9189-4fc7-8d76-d1f4090c8194",
+    ]
+
+    patch = build_generated_topic_card_enrichment(
+        topic,
+        card,
+        enrichment,
+        evidence_chunk_ids=chunk_ids,
+    )
+
+    assert patch["content_summary"] == enrichment["content_summary"]
+    assert patch["common_examples"] == enrichment["common_examples"]
+
+    assert "typical_misconceptions" not in patch
+
+    field_provenance = patch["provenance"]["content_summary"]
+
+    assert field_provenance["origin"] == "generated_candidate"
+    assert field_provenance["status"] == "pending_review"
+    assert field_provenance["pipeline"] == LLM_ENRICHMENT_VERSION
+    assert "retrieved_evidence" in field_provenance["based_on"]
+    assert field_provenance["source_keys"] == [
+        "HISTORY_OFFICIAL"
+    ]
+    assert field_provenance["source_chunk_ids"] == sorted(
+        chunk_ids
+    )
+
+    assert (
+        patch["provenance"]["common_examples"]["origin"]
+        == "generated_candidate"
+    )
+    assert (
+        patch["provenance"]["suitable_activities"]["origin"]
+        == "generated_candidate"
+    )
+
+    assert (
+        patch["derivation_status"]
+        == "mixed_official_and_methodical"
+    )
+    assert patch["verification_status"] == "pending_review"
+
+
+def test_generated_enrichment_requires_grounded_evidence():
+    from types import SimpleNamespace
+
+    from app.services.topic_card_enrichment import (
+        build_generated_topic_card_enrichment,
+    )
+
+    topic = SimpleNamespace(
+        provenance={},
+        derivation_status="pending_enrichment",
+    )
+
+    patch = build_generated_topic_card_enrichment(
+        topic,
+        {
+            "source_references": [
+                {
+                    "source_key": "HISTORY_OFFICIAL",
+                    "source_role": "official_program",
+                }
+            ],
+            "key_concepts": [{"term": "понятие"}],
+            "learning_outcomes": [{"text": "результат"}],
+        },
+        {
+            "content_summary": "Текст",
+        },
+        evidence_chunk_ids=[],
+    )
+
+    assert patch == {}

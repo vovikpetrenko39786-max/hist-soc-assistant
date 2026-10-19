@@ -15,9 +15,11 @@ from app.services.llm_provider import get_generation_provider
 from app.services.retrieval import RetrievalService
 from app.services.topic_enrichment_generation import (
     TopicEnrichmentGenerationService,
+    build_topic_enrichment_context,
 )
 from app.services.topic_card_enrichment import (
     apply_topic_card_enrichment,
+    build_generated_topic_card_enrichment,
     build_topic_card_enrichment,
 )
 
@@ -104,17 +106,48 @@ async def enrich_topic(
                 retrieval,
             )
 
+            generation_context = build_topic_enrichment_context(
+                card,
+                retrieval,
+            )
+            evidence_chunk_ids = [
+                str(item["chunk_id"])
+                for item in generation_context[
+                    "retrieved_evidence"
+                ]
+                if item.get("chunk_id")
+            ]
+
+            proposed_patch = (
+                build_generated_topic_card_enrichment(
+                    topic,
+                    card,
+                    artifact.model_dump(mode="python"),
+                    evidence_chunk_ids=evidence_chunk_ids,
+                )
+            )
+
             await session.rollback()
 
             print(
                 json.dumps(
-                    artifact.model_dump(mode="json"),
+                    {
+                        "artifact": artifact.model_dump(
+                            mode="json"
+                        ),
+                        "evidence_chunk_ids": (
+                            evidence_chunk_ids
+                        ),
+                        "proposed_patch": proposed_patch,
+                    },
                     ensure_ascii=False,
                     indent=2,
+                    default=str,
                 )
             )
             print(
-                "Generated dry run only; no changes committed."
+                "Generated dry run only; "
+                "proposed patch was not committed."
             )
             return 0
 

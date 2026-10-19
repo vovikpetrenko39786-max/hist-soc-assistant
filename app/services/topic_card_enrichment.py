@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 ENRICHMENT_VERSION = "topic_card_enrichment_v0_1"
+LLM_ENRICHMENT_VERSION = "topic_card_enrichment_llm_v0_1"
 PILOT_TOPIC_TITLE = "Как устроено общество"
 HISTORY_PILOT_TOPIC_TITLE = "Мировой экономический кризис и Великая депрессия"
 
@@ -300,9 +301,283 @@ def _may_replace(
     return field_provenance.get("status") in _PENDING_STATUSES
 
 
-def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str, Any]:
-    """Build the addressable pilot update from the pilot's existing catalog evidence."""
+def _build_topic_card_enrichment_patch(
+    topic: Any,
+    card: Mapping[str, Any],
+    enrichment: Mapping[str, Any],
+    *,
+    pipeline: str,
+    field_origins: Mapping[str, str] | None = None,
+    evidence_chunk_ids: list[str] | None = None,
+) -> dict[str, Any]:
     patch: dict[str, Any] = {}
+
+    official_source_keys = sorted({
+        item.get("source_key") or item.get("url")
+        for item in card.get("source_references", [])
+        if (
+            item.get("source_key") or item.get("url")
+        )
+        and item.get("source_role") == "official_program"
+    })
+
+    concepts = (
+        card.get("key_concepts")
+        or card.get("concepts")
+        or []
+    )
+    outcomes = (
+        card.get("learning_outcomes")
+        or card.get("outcomes")
+        or []
+    )
+
+    if not official_source_keys or not concepts or not outcomes:
+        return patch
+
+    exam_source_keys = sorted({
+        item.get("source_key") or item.get("url")
+        for item in card.get("source_references", [])
+        if (
+            item.get("source_key") or item.get("url")
+        )
+        and item.get("source_role") == "exam"
+    })
+
+    source_key = official_source_keys[0]
+    card_topic = card.get("topic", {})
+    blueprint = card_topic.get(
+        "default_lesson_blueprint",
+        {},
+    )
+
+    seed_shape = {
+        "aliases": card.get("aliases"),
+        "outcomes": card.get("learning_outcomes"),
+        "concepts": card.get("key_concepts"),
+        "skills": card.get("skills"),
+        "interdisciplinary_links": card.get(
+            "interdisciplinary_links"
+        ),
+        "exam_links": card.get("exam_links"),
+        "typical_misconceptions": card.get(
+            "typical_misconceptions"
+        ),
+        "common_examples": card.get("common_examples"),
+        "counterexamples": card.get("counterexamples"),
+        "essential_questions": card.get(
+            "essential_questions"
+        ),
+        "suitable_activities": getattr(
+            topic,
+            "suitable_activities",
+            [],
+        ),
+        "default_lesson_blueprint": blueprint,
+        "reflection_patterns": card_topic.get(
+            "reflection_patterns"
+        ),
+        "assessment_skills": card_topic.get(
+            "assessment_skills"
+        ),
+        "difficulty_level": card_topic.get(
+            "difficulty_level"
+        ),
+        "abstraction_level": card_topic.get(
+            "abstraction_level"
+        ),
+        "source_references": card.get(
+            "source_references"
+        ),
+        "content_summary": getattr(
+            topic,
+            "content_summary",
+            None,
+        ),
+    }
+
+    provenance = {
+        **topic_card_provenance(
+            seed_shape,
+            source_key,
+        ),
+        **(getattr(topic, "provenance", None) or {}),
+    }
+
+    if (
+        exam_source_keys
+        and provenance.get(
+            "exam_links",
+            {},
+        ).get("status") != "pending_enrichment"
+    ):
+        provenance["exam_links"] = {
+            **provenance["exam_links"],
+            "source_key": exam_source_keys[0],
+        }
+
+    if "interdisciplinary_links" in provenance:
+        provenance["interdisciplinary_links"] = {
+            key: value
+            for key, value in provenance[
+                "interdisciplinary_links"
+            ].items()
+            if key != "source_key"
+        }
+
+    default_origins = {
+        "content_summary": "generated_candidate",
+        "common_examples": "methodical_mapping",
+        "counterexamples": "methodical_mapping",
+        "typical_misconceptions": "generated_candidate",
+        "essential_questions": "generated_candidate",
+        "suitable_activities": "methodical_mapping",
+    }
+    field_origins = {
+        **default_origins,
+        **dict(field_origins or {}),
+    }
+
+    field_dependencies = {
+        "content_summary": [
+            "key_concepts",
+            "learning_outcomes",
+        ],
+        "common_examples": [
+            "key_concepts",
+            "learning_outcomes",
+            "skills",
+        ],
+        "counterexamples": [
+            "key_concepts",
+            "learning_outcomes",
+        ],
+        "typical_misconceptions": [
+            "key_concepts",
+            "learning_outcomes",
+        ],
+        "essential_questions": [
+            "key_concepts",
+            "learning_outcomes",
+        ],
+        "suitable_activities": [
+            "key_concepts",
+            "learning_outcomes",
+            "skills",
+        ],
+    }
+
+    normalized_chunk_ids = sorted({
+        str(chunk_id)
+        for chunk_id in (evidence_chunk_ids or [])
+        if chunk_id
+    })
+
+    for field, based_on in field_dependencies.items():
+        current_value = getattr(
+            topic,
+            field,
+            None,
+        )
+        value = enrichment.get(field)
+
+        if not _may_replace(
+            provenance,
+            field,
+            current_value,
+        ):
+            continue
+
+        if current_value == value:
+            continue
+
+        patch[field] = value
+
+        field_provenance = {
+            "origin": field_origins[field],
+            "status": "pending_review",
+            "pipeline": pipeline,
+            "based_on": [
+                *based_on,
+                *(
+                    ["retrieved_evidence"]
+                    if normalized_chunk_ids
+                    else []
+                ),
+            ],
+            "source_keys": official_source_keys,
+        }
+
+        if normalized_chunk_ids:
+            field_provenance[
+                "source_chunk_ids"
+            ] = normalized_chunk_ids
+
+        provenance[field] = field_provenance
+
+    for field in (
+        "default_lesson_blueprint",
+        "reflection_patterns",
+    ):
+        current_provenance = provenance.get(
+            field,
+            {},
+        )
+        if (
+            current_provenance.get("role")
+            == "system_fallback"
+        ):
+            continue
+        if (
+            current_provenance.get("status")
+            not in _PENDING_STATUSES
+        ):
+            continue
+
+        provenance[field] = {
+            **current_provenance,
+            "origin": "methodical_mapping",
+            "status": current_provenance.get(
+                "status",
+                "pending_review",
+            ),
+            "role": "system_fallback",
+            "specific_to_topic": False,
+        }
+
+    if provenance != (
+        getattr(topic, "provenance", None) or {}
+    ):
+        patch["provenance"] = provenance
+
+    content_fields = set(field_dependencies)
+
+    if content_fields.intersection(patch):
+        if getattr(
+            topic,
+            "derivation_status",
+            None,
+        ) in (
+            None,
+            "",
+            "pending_enrichment",
+        ):
+            patch[
+                "derivation_status"
+            ] = "mixed_official_and_methodical"
+
+        patch[
+            "verification_status"
+        ] = "pending_review"
+
+    return patch
+
+
+def build_topic_card_enrichment(
+    topic: Any,
+    card: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build enrichment for the two original manual pilot topics."""
     card_topic = card.get("topic", {})
     subject = card.get("subject", {})
     enrichment = None
@@ -318,142 +593,50 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
         subject.get("code") == "HISTORY"
         and card.get("grade") == 10
         and card.get("level") == "basic"
-        and card_topic.get("title") == HISTORY_PILOT_TOPIC_TITLE
+        and card_topic.get("title")
+        == HISTORY_PILOT_TOPIC_TITLE
     ):
         enrichment = HISTORY_PILOT_ENRICHMENT
 
     if enrichment is None:
-        return patch
+        return {}
 
-    official_source_keys = sorted({
-        item.get("source_key") or item.get("url")
-        for item in card.get("source_references", [])
-        if (item.get("source_key") or item.get("url")) and item.get("source_role") == "official_program"
-    })
-    concepts = card.get("key_concepts", [])
-    outcomes = card.get("learning_outcomes", [])
-    if not official_source_keys or not concepts or not outcomes:
-        return patch
+    return _build_topic_card_enrichment_patch(
+        topic,
+        card,
+        enrichment,
+        pipeline=ENRICHMENT_VERSION,
+    )
 
-    exam_source_keys = sorted({
-        item.get("source_key") or item.get("url")
-        for item in card.get("source_references", [])
-        if (item.get("source_key") or item.get("url")) and item.get("source_role") == "exam"
-    })
-    source_key = official_source_keys[0] if official_source_keys else ""
-    blueprint = card_topic.get("default_lesson_blueprint", {})
-    seed_shape = {
-        "aliases": card.get("aliases"),
-        "outcomes": card.get("learning_outcomes"),
-        "concepts": card.get("key_concepts"),
-        "skills": card.get("skills"),
-        "interdisciplinary_links": card.get("interdisciplinary_links"),
-        "exam_links": card.get("exam_links"),
-        "typical_misconceptions": card.get("typical_misconceptions"),
-        "common_examples": card.get("common_examples"),
-        "counterexamples": card.get("counterexamples"),
-        "essential_questions": card.get("essential_questions"),
-        "suitable_activities": topic.suitable_activities,
-        "default_lesson_blueprint": blueprint,
-        "reflection_patterns": card_topic.get("reflection_patterns"),
-        "assessment_skills": card_topic.get("assessment_skills"),
-        "difficulty_level": card_topic.get("difficulty_level"),
-        "abstraction_level": card_topic.get("abstraction_level"),
-        "source_references": card.get("source_references"),
-        "content_summary": topic.content_summary,
+
+def build_generated_topic_card_enrichment(
+    topic: Any,
+    card: Mapping[str, Any],
+    enrichment: Mapping[str, Any],
+    *,
+    evidence_chunk_ids: list[str],
+) -> dict[str, Any]:
+    """Build a review-required patch from grounded LLM enrichment."""
+    if not evidence_chunk_ids:
+        return {}
+
+    generated_origins = {
+        "content_summary": "generated_candidate",
+        "common_examples": "generated_candidate",
+        "counterexamples": "generated_candidate",
+        "typical_misconceptions": "generated_candidate",
+        "essential_questions": "generated_candidate",
+        "suitable_activities": "generated_candidate",
     }
-    provenance = {
-        **topic_card_provenance(seed_shape, source_key),
-        **(topic.provenance or {}),
-    }
-    if exam_source_keys and provenance.get("exam_links", {}).get("status") != "pending_enrichment":
-        provenance["exam_links"] = {
-            **provenance["exam_links"],
-            "source_key": exam_source_keys[0],
-        }
-    if "interdisciplinary_links" in provenance:
-        provenance["interdisciplinary_links"] = {
-            key: value
-            for key, value in provenance["interdisciplinary_links"].items()
-            if key != "source_key"
-        }
 
-    generated_fields = {
-        "content_summary": {
-            "value": enrichment["content_summary"],
-            "origin": "generated_candidate",
-            "based_on": ["key_concepts", "learning_outcomes"],
-        },
-        "common_examples": {
-            "value": enrichment["common_examples"],
-            "origin": "methodical_mapping",
-            "based_on": ["key_concepts", "learning_outcomes", "skills"],
-        },
-        "counterexamples": {
-            "value": enrichment["counterexamples"],
-            "origin": "methodical_mapping",
-            "based_on": ["key_concepts", "learning_outcomes"],
-        },
-        "typical_misconceptions": {
-            "value": enrichment["typical_misconceptions"],
-            "origin": "generated_candidate",
-            "based_on": ["key_concepts", "learning_outcomes"],
-        },
-        "essential_questions": {
-            "value": enrichment["essential_questions"],
-            "origin": "generated_candidate",
-            "based_on": ["key_concepts", "learning_outcomes"],
-        },
-        "suitable_activities": {
-            "value": enrichment["suitable_activities"],
-            "origin": "methodical_mapping",
-            "based_on": ["key_concepts", "learning_outcomes", "skills"],
-        },
-    }
-    for field, spec in generated_fields.items():
-        current_value = getattr(topic, field, None)
-        if not _may_replace(provenance, field, current_value):
-            continue
-        if current_value == spec["value"]:
-            continue
-        patch[field] = spec["value"]
-        provenance[field] = {
-            "origin": spec["origin"],
-            "status": "pending_review",
-            "pipeline": ENRICHMENT_VERSION,
-            "based_on": spec["based_on"],
-            "source_keys": official_source_keys,
-        }
-
-    for field in ("default_lesson_blueprint", "reflection_patterns"):
-        current_provenance = provenance.get(field, {})
-        if current_provenance.get("role") == "system_fallback":
-            continue
-        if current_provenance.get("status") not in _PENDING_STATUSES:
-            continue
-        provenance[field] = {
-            **current_provenance,
-            "origin": "methodical_mapping",
-            "status": current_provenance.get("status", "pending_review"),
-            "role": "system_fallback",
-            "specific_to_topic": False,
-        }
-
-    if provenance != (topic.provenance or {}):
-        patch["provenance"] = provenance
-
-    if patch:
-        content_fields = set(generated_fields)
-        if content_fields.intersection(patch) and topic.derivation_status in (
-            None,
-            "",
-            "pending_enrichment",
-        ):
-            patch["derivation_status"] = "mixed_official_and_methodical"
-        if content_fields.intersection(patch):
-            patch["verification_status"] = "pending_review"
-
-    return patch
+    return _build_topic_card_enrichment_patch(
+        topic,
+        card,
+        enrichment,
+        pipeline=LLM_ENRICHMENT_VERSION,
+        field_origins=generated_origins,
+        evidence_chunk_ids=evidence_chunk_ids,
+    )
 
 
 def apply_topic_card_enrichment(topic: Any, patch: Mapping[str, Any]) -> None:

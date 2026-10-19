@@ -78,7 +78,10 @@ def test_enrich_topic_selects_topic_by_uuid_and_dry_runs(monkeypatch):
     assert topic.content_summary == "Enriched summary"
 
 
-def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
+def test_generate_mode_uses_provider_and_rolls_back(
+    monkeypatch,
+    capsys,
+):
     topic_id = UUID("3b5a578c-4352-4ca6-bd79-19d48aed5365")
 
     topic = SimpleNamespace(
@@ -105,6 +108,7 @@ def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
         "skills": [],
         "source_references": [
             {
+                "source_key": "official-source",
                 "title": "Official program",
                 "section": None,
                 "source_role": "official_program",
@@ -214,3 +218,12 @@ def test_generate_mode_uses_provider_and_rolls_back(monkeypatch):
     assert session.rolled_back is True
     assert session.committed is False
     assert topic.content_summary is None
+
+    output = capsys.readouterr().out
+
+    assert '"proposed_patch"' in output
+    assert '"evidence_chunk_ids"' in output
+    assert '"pending_review"' in output
+    assert '"generated_candidate"' in output
+    assert '"source_chunk_ids"' in output
+    assert "proposed patch was not committed" in output
