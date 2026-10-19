@@ -82,6 +82,26 @@ class LessonArtifact(BaseModel):
     source_references: list[SourceReference] = Field(default_factory=list)
 
 
+class TopicEnrichmentExample(BaseModel):
+    title: str
+    description: str
+
+
+class TopicEnrichmentActivity(BaseModel):
+    activity: str
+    purpose: str
+    student_action: str
+
+
+class TopicEnrichmentArtifact(BaseModel):
+    content_summary: str
+    common_examples: list[TopicEnrichmentExample]
+    counterexamples: list[TopicEnrichmentExample]
+    typical_misconceptions: list[str]
+    essential_questions: list[str]
+    suitable_activities: list[TopicEnrichmentActivity]
+
+
 class QualityCheck(BaseModel):
     code: str
     passed: bool

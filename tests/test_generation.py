@@ -212,6 +212,24 @@ def test_http_provider_uses_strict_lesson_artifact_schema():
     assert set(source_reference["required"]) == set(source_reference["properties"])
 
 
+def test_http_provider_uses_strict_topic_enrichment_schema():
+    schema = HttpLessonProvider._topic_enrichment_artifact_schema()
+
+    assert schema["additionalProperties"] is False
+    assert set(schema["required"]) == set(schema["properties"])
+
+    assert schema["properties"]["typical_misconceptions"]["items"]["type"] == "string"
+    assert schema["properties"]["essential_questions"]["items"]["type"] == "string"
+
+    example = schema["$defs"]["TopicEnrichmentExample"]
+    assert example["additionalProperties"] is False
+    assert set(example["required"]) == set(example["properties"])
+
+    activity = schema["$defs"]["TopicEnrichmentActivity"]
+    assert activity["additionalProperties"] is False
+    assert set(activity["required"]) == set(activity["properties"])
+
+
 def test_quality_gate_accepts_concepts_with_definitions():
     card = topic_card()
     context = GroundedContextBuilder().build_lesson_context(

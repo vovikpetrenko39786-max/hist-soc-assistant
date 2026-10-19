@@ -6,9 +6,33 @@ from typing import Protocol
 import httpx
 
 from app.core.config import get_settings
-from app.schemas.generation import LessonArtifact
+from app.schemas.generation import LessonArtifact, TopicEnrichmentArtifact
 
 settings = get_settings()
+
+
+def _strict_model_schema(model) -> dict:
+    """Convert a Pydantic model schema to OpenAI strict Structured Outputs."""
+    schema = model.model_json_schema()
+
+    def normalize(node):
+        if isinstance(node, dict):
+            node.pop("default", None)
+
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                node["additionalProperties"] = False
+                node["required"] = list(properties.keys())
+
+            for value in node.values():
+                normalize(value)
+
+        elif isinstance(node, list):
+            for value in node:
+                normalize(value)
+
+    normalize(schema)
+    return schema
 
 
 class GenerationProviderError(RuntimeError):
@@ -204,28 +228,11 @@ class HttpLessonProvider:
 
     @staticmethod
     def _lesson_artifact_schema() -> dict:
-        """Convert Pydantic JSON Schema to OpenAI strict Structured Outputs schema."""
-        schema = LessonArtifact.model_json_schema()
+        return _strict_model_schema(LessonArtifact)
 
-        def normalize(node):
-            if isinstance(node, dict):
-                # Defaults are not needed in the generation contract.
-                node.pop("default", None)
-
-                properties = node.get("properties")
-                if isinstance(properties, dict):
-                    node["additionalProperties"] = False
-                    node["required"] = list(properties.keys())
-
-                for value in node.values():
-                    normalize(value)
-
-            elif isinstance(node, list):
-                for value in node:
-                    normalize(value)
-
-        normalize(schema)
-        return schema
+    @staticmethod
+    def _topic_enrichment_artifact_schema() -> dict:
+        return _strict_model_schema(TopicEnrichmentArtifact)
 
     def __init__(self):
         if not settings.generation_http_base_url:
