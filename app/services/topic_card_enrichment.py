@@ -162,8 +162,34 @@ def topic_card_provenance(topic_item: dict, source_key: str) -> dict:
     return {**result, **(topic_item.get("provenance") or {})}
 
 
+def _is_enrich_placeholder(value: Any) -> bool:
+    return isinstance(value, str) and value.strip().upper() == "ENRICH"
+
+
 def _is_empty(value: Any) -> bool:
-    return value is None or value == "" or value == [] or value == {}
+    if _is_enrich_placeholder(value):
+        return True
+    if isinstance(value, list):
+        return value == [] or all(_is_enrich_placeholder(item) for item in value)
+    return value is None or value == "" or value == {}
+
+
+def sanitize_topic_card_output(card: Mapping[str, Any]) -> dict[str, Any]:
+    def clean(value: Any) -> Any:
+        if _is_enrich_placeholder(value):
+            return None
+        if isinstance(value, list):
+            cleaned = []
+            for item in value:
+                normalized = clean(item)
+                if normalized is not None:
+                    cleaned.append(normalized)
+            return cleaned
+        if isinstance(value, Mapping):
+            return {key: clean(item) for key, item in value.items()}
+        return value
+
+    return clean(dict(card))
 
 
 def _may_replace(topic: Any, field: str, current_value: Any) -> bool:

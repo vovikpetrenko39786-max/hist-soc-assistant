@@ -18,6 +18,7 @@ from app.models.catalog import (
     TopicSource,
 )
 from app.models.entities import Source
+from app.services.topic_card_enrichment import build_topic_card_enrichment, sanitize_topic_card_output
 
 class CurriculumCatalogService:
     async def list_subjects(self, session: AsyncSession):
@@ -129,7 +130,7 @@ class CurriculumCatalogService:
             'status':source.status,
         } for link,source in source_rows]
         activities=t.suitable_activities or (t.default_lesson_blueprint or {}).get('recommended_activities', [])
-        return {
+        card = {
           'topic_id':t.id,
           'subject':{'id':s.id,'code':s.code,'name':s.name},
           'grade':g.grade,
@@ -158,3 +159,13 @@ class CurriculumCatalogService:
           'interdisciplinary_links':[{'related_subject':x.related_subject,'related_topic':x.related_topic,'link_type':x.link_type,'description':x.description,'strength':x.strength} for x in interdisciplinary_links],
           'exam_links':[{'exam':x.exam,'exam_year':x.exam_year,'exam_section':x.exam_section,'task_types':x.task_types or [],'codifier_reference':x.codifier_reference,'importance':x.importance} for x in exam_links],
         }
+        card = sanitize_topic_card_output(card)
+        patch = build_topic_card_enrichment(t, card)
+        for field, value in patch.items():
+            if field == "verification_status":
+                continue
+            if field in card:
+                card[field] = value
+            elif field in card.get("topic", {}):
+                card["topic"][field] = value
+        return card

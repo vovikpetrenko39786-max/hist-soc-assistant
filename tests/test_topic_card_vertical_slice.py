@@ -421,3 +421,23 @@ def test_topic_search_query_uses_explicit_join_left_sides():
     ))
 
     assert rows == []
+
+
+def test_topic_card_sanitizer_removes_enrich_placeholders():
+    from app.services.topic_card_enrichment import sanitize_topic_card_output
+
+    raw = {
+        "content_summary": "ENRICH",
+        "common_examples": ["ENRICH", {"title": "Реальный пример"}],
+        "topic": {
+            "description": "ENRICH",
+            "essential_questions": ["ENRICH"],
+        },
+    }
+
+    cleaned = sanitize_topic_card_output(raw)
+
+    assert cleaned["content_summary"] is None
+    assert cleaned["common_examples"] == [{"title": "Реальный пример"}]
+    assert cleaned["topic"]["description"] is None
+    assert cleaned["topic"]["essential_questions"] == []
