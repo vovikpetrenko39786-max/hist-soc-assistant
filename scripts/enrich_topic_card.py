@@ -1,31 +1,19 @@
-"""Safely enrich the single pilot Topic Card from its existing catalog links."""
+"""Safely persist Topic Card enrichment for a selected catalog topic."""
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
 import sys
-
-from sqlalchemy import select
+from uuid import UUID
 
 from app.db.session import SessionLocal
-from app.models.catalog import (
-    Curriculum,
-    CurriculumUnit,
-    GradeLevel,
-    Subject,
-    Topic,
-)
+from app.models.catalog import Topic
 from app.services.catalog import CurriculumCatalogService
 from app.services.topic_card_enrichment import (
     apply_topic_card_enrichment,
     build_topic_card_enrichment,
 )
-
-PILOT_SUBJECT = "SOCIAL_STUDIES"
-PILOT_GRADE = 9
-PILOT_LEVEL = "basic"
-PILOT_TITLE = "Как устроено общество"
 
 
 def _updated_card(card: dict, patch: dict) -> dict:
@@ -39,65 +27,100 @@ def _updated_card(card: dict, patch: dict) -> dict:
     }
     updated["topic"] = {
         **card["topic"],
-        **{key: value for key, value in patch.items() if key in topic_patch_fields},
+        **{
+            key: value
+            for key, value in patch.items()
+            if key in topic_patch_fields
+        },
     }
     return updated
 
 
-async def enrich_pilot_topic(*, apply: bool) -> int:
-    stmt = (
-        select(Topic)
-        .join(CurriculumUnit, Topic.unit_id == CurriculumUnit.id)
-        .join(Curriculum, CurriculumUnit.curriculum_id == Curriculum.id)
-        .join(Subject, Curriculum.subject_id == Subject.id)
-        .join(GradeLevel, Curriculum.grade_level_id == GradeLevel.id)
-        .where(
-            Subject.code == PILOT_SUBJECT,
-            GradeLevel.grade == PILOT_GRADE,
-            Curriculum.level == PILOT_LEVEL,
-            Curriculum.status == "current",
-            Topic.title == PILOT_TITLE,
-        )
-    )
-
+async def enrich_topic(*, topic_id: UUID, apply: bool) -> int:
     async with SessionLocal() as session:
-        topic = (await session.execute(stmt)).scalar_one_or_none()
+        topic = await session.get(Topic, topic_id)
         if topic is None:
-            print("Pilot Topic Card not found in the current catalog.", file=sys.stderr)
+            print(
+                f"Topic {topic_id} not found in the current catalog.",
+                file=sys.stderr,
+            )
             return 1
 
-        card = await CurriculumCatalogService().get_topic_card(session, topic.id)
+        card = await CurriculumCatalogService().get_topic_card(
+            session,
+            topic.id,
+        )
         if card is None:
-            print("Pilot Topic Card has no complete curriculum context.", file=sys.stderr)
+            print(
+                "Topic Card has no complete curriculum context.",
+                file=sys.stderr,
+            )
             return 1
 
         patch = build_topic_card_enrichment(topic, card)
         if not patch:
-            print("No enrichment can be built from the existing linked evidence.", file=sys.stderr)
+            print(
+                "No enrichment changes can be built for this Topic Card.",
+                file=sys.stderr,
+            )
             return 1
 
         apply_topic_card_enrichment(topic, patch)
+
         if apply:
             await session.commit()
         else:
             await session.rollback()
 
-        print(json.dumps(_updated_card(card, patch), ensure_ascii=False, indent=2, default=str))
-        print("Changes committed." if apply else "Dry run only; no changes committed.")
+        print(
+            json.dumps(
+                _updated_card(card, patch),
+                ensure_ascii=False,
+                indent=2,
+                default=str,
+            )
+        )
+        print(
+            "Changes committed."
+            if apply
+            else "Dry run only; no changes committed."
+        )
+
     return 0
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Enrich only the SOCIAL_STUDIES grade 9 basic pilot Topic Card."
+        description=(
+            "Build Topic Card enrichment for a selected topic. "
+            "The default mode is read-only; use --apply to persist changes."
+        )
+    )
+    parser.add_argument(
+        "--topic-id",
+        type=UUID,
+        required=True,
+        help="Catalog Topic UUID to enrich.",
     )
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Persist changes to the database configured for this process; default is read-only dry run.",
+        help=(
+            "Persist changes to the configured database; "
+            "without this flag the transaction is rolled back."
+        ),
     )
+
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(enrich_pilot_topic(apply=args.apply)))
+
+    raise SystemExit(
+        asyncio.run(
+            enrich_topic(
+                topic_id=args.topic_id,
+                apply=args.apply,
+            )
+        )
+    )
 
 
 if __name__ == "__main__":
