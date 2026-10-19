@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from collections.abc import Mapping
 from typing import Any, Protocol
 
@@ -13,6 +15,76 @@ class TopicEnrichmentGenerationError(RuntimeError):
 class TopicEnrichmentProvider(Protocol):
     async def generate_topic_enrichment(self, context: dict) -> dict:
         ...
+
+
+_MATERIAL_DEPENDENCY_PATTERN = re.compile(
+    r"\b(?:"
+    r"карт(?:а|ы|у|е|ой|ами|ах)?|"
+    r"источник\w*|"
+    r"документ\w*|"
+    r"статистик\w*|"
+    r"диаграм\w*|"
+    r"иллюстрац\w*|"
+    r"фотограф\w*|"
+    r"цитат\w*|"
+    r"отрывок\w*"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_label(value: str | None) -> str:
+    return " ".join(
+        re.sub(
+            r"[^\w]+",
+            " ",
+            value or "",
+            flags=re.UNICODE,
+        ).casefold().split()
+    )
+
+
+def _validate_generated_artifact(
+    artifact: TopicEnrichmentArtifact,
+    context: Mapping[str, Any],
+) -> None:
+    concept_labels = {
+        _normalize_label(item.get("term"))
+        for item in (context.get("key_concepts") or [])
+        if item.get("term")
+    }
+    example_labels = [
+        _normalize_label(item.title)
+        for item in artifact.common_examples
+        if item.title
+    ]
+
+    if (
+        example_labels
+        and concept_labels
+        and all(label in concept_labels for label in example_labels)
+    ):
+        raise TopicEnrichmentGenerationError(
+            "Generated common examples only restate key concepts."
+        )
+
+    if not context.get("available_materials"):
+        for activity in artifact.suitable_activities:
+            activity_text = " ".join(
+                [
+                    activity.activity,
+                    activity.purpose,
+                    activity.student_action,
+                ]
+            )
+            match = _MATERIAL_DEPENDENCY_PATTERN.search(
+                activity_text
+            )
+            if match:
+                raise TopicEnrichmentGenerationError(
+                    "Generated activity depends on unavailable "
+                    f"learning material: {match.group(0)}"
+                )
 
 
 def build_topic_enrichment_context(
@@ -32,6 +104,11 @@ def build_topic_enrichment_context(
         or []
     )
     skills = card.get("skills") or []
+    available_materials = [
+        item
+        for item in (card.get("available_materials") or [])
+        if isinstance(item, Mapping)
+    ]
 
     official_sources = [
         source
@@ -100,6 +177,14 @@ def build_topic_enrichment_context(
             }
             for item in skills
         ],
+        "available_materials": [
+            {
+                "type": item.get("type"),
+                "title": item.get("title"),
+                "description": item.get("description"),
+            }
+            for item in available_materials
+        ],
         "official_sources": [
             {
                 "title": item.get("title"),
@@ -123,4 +208,7 @@ class TopicEnrichmentGenerationService:
 
         raw = await self.provider.generate_topic_enrichment(context)
 
-        return TopicEnrichmentArtifact.model_validate(raw)
+        artifact = TopicEnrichmentArtifact.model_validate(raw)
+        _validate_generated_artifact(artifact, context)
+
+        return artifact

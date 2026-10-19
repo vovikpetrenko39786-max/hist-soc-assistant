@@ -169,3 +169,65 @@ def test_context_rejects_topic_without_official_evidence():
         match="official program source",
     ):
         build_topic_enrichment_context(card)
+
+
+def test_service_rejects_examples_that_only_repeat_key_concepts():
+    class FakeProvider:
+        async def generate_topic_enrichment(self, context):
+            return {
+                "content_summary": "Summary",
+                "common_examples": [
+                    {
+                        "title": "Великая депрессия",
+                        "description": "Повтор понятия вместо примера.",
+                    }
+                ],
+                "counterexamples": [],
+                "typical_misconceptions": [],
+                "essential_questions": [],
+                "suitable_activities": [],
+            }
+
+    with pytest.raises(
+        TopicEnrichmentGenerationError,
+        match="only restate key concepts",
+    ):
+        asyncio.run(
+            TopicEnrichmentGenerationService(
+                FakeProvider()
+            ).generate(topic_card())
+        )
+
+
+def test_service_rejects_unavailable_learning_material():
+    class FakeProvider:
+        async def generate_topic_enrichment(self, context):
+            return {
+                "content_summary": "Summary",
+                "common_examples": [
+                    {
+                        "title": "Безработица",
+                        "description": "Конкретное проявление кризиса.",
+                    }
+                ],
+                "counterexamples": [],
+                "typical_misconceptions": [],
+                "essential_questions": [],
+                "suitable_activities": [
+                    {
+                        "activity": "Разобрать карту по теме.",
+                        "purpose": "Извлечь сведения из карты.",
+                        "student_action": "Проанализировать карту.",
+                    }
+                ],
+            }
+
+    with pytest.raises(
+        TopicEnrichmentGenerationError,
+        match="unavailable learning material",
+    ):
+        asyncio.run(
+            TopicEnrichmentGenerationService(
+                FakeProvider()
+            ).generate(topic_card())
+        )
