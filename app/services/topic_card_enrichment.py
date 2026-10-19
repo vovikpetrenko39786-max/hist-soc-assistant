@@ -289,10 +289,14 @@ def sanitize_topic_card_output(card: Mapping[str, Any]) -> dict[str, Any]:
     return clean(dict(card))
 
 
-def _may_replace(topic: Any, field: str, current_value: Any) -> bool:
+def _may_replace(
+    provenance: Mapping[str, Any],
+    field: str,
+    current_value: Any,
+) -> bool:
     if _is_empty(current_value):
         return True
-    field_provenance = (topic.provenance or {}).get(field, {})
+    field_provenance = provenance.get(field, {})
     return field_provenance.get("status") in _PENDING_STATUSES
 
 
@@ -408,7 +412,7 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
     }
     for field, spec in generated_fields.items():
         current_value = getattr(topic, field, None)
-        if not _may_replace(topic, field, current_value):
+        if not _may_replace(provenance, field, current_value):
             continue
         if current_value == spec["value"]:
             continue

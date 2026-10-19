@@ -592,5 +592,9 @@ def test_history_crisis_topic_can_be_enriched():
     assert patch["content_summary"]
     assert patch["common_examples"]
     assert patch["counterexamples"]
+    assert patch["typical_misconceptions"]
+    assert patch["essential_questions"]
     assert patch["suitable_activities"]
+    assert patch["provenance"]["typical_misconceptions"]["status"] == "pending_review"
+    assert patch["provenance"]["essential_questions"]["status"] == "pending_review"
     assert patch["derivation_status"] == "mixed_official_and_methodical"
