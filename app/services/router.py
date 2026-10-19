@@ -31,11 +31,11 @@ class RequestRouter:
 
         grade = None
         class_label = None
-        match = re.search(r"\b(5|6|7|8|9|10|11)(?:[-– ]?([а-я]))?\s*(?:класс|кл\.)?", lowered)
+        match = re.search(r"\b(5|6|7|8|9|10|11)(?:\s*[-—–]?\s*([а-яa-z])(?![а-яa-z]))?\s*(?:класс(?:а|е|у|ом)?|кл\.?)?", lowered)
         if match:
             grade = int(match.group(1))
             letter = match.group(2)
-            class_label = f"{grade}-{letter.upper()}" if letter else str(grade)
+            class_label = f"{grade}-{letter.upper()}" if letter else None
 
         mode = "default"
         if any(x in lowered for x in ["подробно", "полноцен", "полный урок"]):

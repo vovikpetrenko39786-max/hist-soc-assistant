@@ -95,13 +95,13 @@ class NaturalLanguageParser:
         grade = None
         class_label = None
         match = re.search(
-            r"(?<!\d)(5|6|7|8|9|10|11)\s*(?:[-–—]\s*([а-яa-z]))?\s*(?:класс|кл\.?)?",
+            r"(?<!\d)(5|6|7|8|9|10|11)\s*(?:[-–—]\s*([а-яa-z])(?![а-яa-z]))?\s*(?:класс(?:а|е|у|ом)?|кл\.?)?",
             low,
         )
         if match:
             grade = int(match.group(1))
             letter = match.group(2)
-            class_label = f"{grade}-{letter.upper()}" if letter else str(grade)
+            class_label = f"{grade}-{letter.upper()}" if letter else None
         confidence_parts.append(1.0 if grade else 0.0)
 
         # Level.

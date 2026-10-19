@@ -18,3 +18,23 @@ def test_strict_source():
     assert result.task == "source_query"
     assert result.subject == "history"
     assert result.strict_source is True
+
+
+def test_class_label_parsing_regression():
+    router = RequestRouter()
+
+    no_letter = router.route("Подготовь урок для 10 класса по истории")
+    assert no_letter.grade == 10
+    assert no_letter.class_label is None
+
+    compact = router.route("Подготовь урок для 10А класса по истории")
+    assert compact.grade == 10
+    assert compact.class_label == "10-А"
+
+    spaced = router.route("Подготовь урок для 10 А класса по истории")
+    assert spaced.grade == 10
+    assert spaced.class_label == "10-А"
+
+    hyphenated = router.route("Подготовь урок для 10-А класса по истории")
+    assert hyphenated.grade == 10
+    assert hyphenated.class_label == "10-А"
