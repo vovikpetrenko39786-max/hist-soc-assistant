@@ -10,6 +10,10 @@ from uuid import UUID
 from app.db.session import SessionLocal
 from app.models.catalog import Topic
 from app.services.catalog import CurriculumCatalogService
+from app.services.llm_provider import get_generation_provider
+from app.services.topic_enrichment_generation import (
+    TopicEnrichmentGenerationService,
+)
 from app.services.topic_card_enrichment import (
     apply_topic_card_enrichment,
     build_topic_card_enrichment,
@@ -36,7 +40,12 @@ def _updated_card(card: dict, patch: dict) -> dict:
     return updated
 
 
-async def enrich_topic(*, topic_id: UUID, apply: bool) -> int:
+async def enrich_topic(
+    *,
+    topic_id: UUID,
+    apply: bool,
+    generate: bool = False,
+) -> int:
     async with SessionLocal() as session:
         topic = await session.get(Topic, topic_id)
         if topic is None:
@@ -56,6 +65,35 @@ async def enrich_topic(*, topic_id: UUID, apply: bool) -> int:
                 file=sys.stderr,
             )
             return 1
+
+        if generate:
+            provider = get_generation_provider()
+            if not hasattr(provider, "generate_topic_enrichment"):
+                print(
+                    "Configured generation provider does not support "
+                    "Topic Card enrichment.",
+                    file=sys.stderr,
+                )
+                await session.rollback()
+                return 1
+
+            artifact = await TopicEnrichmentGenerationService(
+                provider
+            ).generate(card)
+
+            await session.rollback()
+
+            print(
+                json.dumps(
+                    artifact.model_dump(mode="json"),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            print(
+                "Generated dry run only; no changes committed."
+            )
+            return 0
 
         patch = build_topic_card_enrichment(topic, card)
         if not patch:
@@ -106,18 +144,30 @@ def main() -> None:
         "--apply",
         action="store_true",
         help=(
-            "Persist changes to the configured database; "
+            "Persist manual enrichment changes to the configured database; "
             "without this flag the transaction is rolled back."
+        ),
+    )
+    parser.add_argument(
+        "--generate",
+        action="store_true",
+        help=(
+            "Generate Topic Card enrichment with the configured provider. "
+            "This mode is always dry-run and never writes to the database."
         ),
     )
 
     args = parser.parse_args()
+
+    if args.generate and args.apply:
+        parser.error("--generate cannot be combined with --apply")
 
     raise SystemExit(
         asyncio.run(
             enrich_topic(
                 topic_id=args.topic_id,
                 apply=args.apply,
+                generate=args.generate,
             )
         )
     )
