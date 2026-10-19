@@ -117,14 +117,33 @@ class LessonQualityGate:
         )
 
         required_concepts = {
-            item["term"].casefold()
+            item["term"].casefold().strip()
             for item in topic_card.get("concepts", [])
             if item.get("importance") == "required"
         }
-        artifact_concepts = {item.casefold() for item in artifact.key_concepts}
+        artifact_concepts = [
+            item.casefold().strip()
+            for item in artifact.key_concepts
+        ]
+
+        def concept_is_covered(required: str) -> bool:
+            for candidate in artifact_concepts:
+                if candidate == required:
+                    return True
+                if candidate.startswith(required):
+                    remainder = candidate[len(required):]
+                    if not remainder or not remainder[0].isalnum():
+                        return True
+            return False
+
+        covered_concepts = {
+            concept for concept in required_concepts
+            if concept_is_covered(concept)
+        }
+
         concept_coverage = (
             1.0 if not required_concepts
-            else len(required_concepts & artifact_concepts) / len(required_concepts)
+            else len(covered_concepts) / len(required_concepts)
         )
         add(
             "required_concepts",

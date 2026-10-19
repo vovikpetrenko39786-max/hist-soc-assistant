@@ -210,3 +210,35 @@ def test_http_provider_uses_strict_lesson_artifact_schema():
     source_reference = schema["$defs"]["SourceReference"]
     assert source_reference["additionalProperties"] is False
     assert set(source_reference["required"]) == set(source_reference["properties"])
+
+
+def test_quality_gate_accepts_concepts_with_definitions():
+    card = topic_card()
+    context = GroundedContextBuilder().build_lesson_context(
+        request(), card, retrieval()
+    )
+
+    raw = asyncio.run(TemplateLessonProvider().generate_lesson(context))
+    artifact = LessonArtifact.model_validate(raw)
+
+    required_terms = [
+        item["term"]
+        for item in card["concepts"]
+        if item.get("importance") == "required"
+    ]
+    artifact.key_concepts = [
+        f"{term} — содержательное определение для проверки."
+        for term in required_terms
+    ]
+
+    report = LessonQualityGate().evaluate(
+        artifact, card, context["source_manifest"]
+    )
+
+    check = next(
+        x for x in report["checks"]
+        if x["code"] == "required_concepts"
+    )
+
+    assert check["passed"] is True
+    assert "100%" in check["message"]
