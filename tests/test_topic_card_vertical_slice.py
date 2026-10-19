@@ -441,3 +441,56 @@ def test_topic_card_sanitizer_removes_enrich_placeholders():
     assert cleaned["common_examples"] == [{"title": "Реальный пример"}]
     assert cleaned["topic"]["description"] is None
     assert cleaned["topic"]["essential_questions"] == []
+
+def test_enrichment_uses_official_url_when_source_key_is_null():
+    from types import SimpleNamespace
+
+    from app.services.topic_card_enrichment import build_topic_card_enrichment
+
+    topic = SimpleNamespace(
+        content_summary=None,
+        common_examples=[],
+        counterexamples=[],
+        typical_misconceptions=[],
+        essential_questions=[],
+        suitable_activities=[],
+        provenance={},
+        derivation_status="pending_enrichment",
+    )
+
+    card = {
+        "subject": {"code": "SOCIAL_STUDIES"},
+        "grade": 9,
+        "level": "basic",
+        "topic": {
+            "title": "Как устроено общество",
+            "default_lesson_blueprint": {},
+        },
+        "source_references": [
+            {
+                "source_key": None,
+                "url": "https://edsoo.ru/official-program.pdf",
+                "source_role": "official_program",
+            },
+            {
+                "source_key": None,
+                "url": "https://fipi.ru/exam.pdf",
+                "source_role": "exam",
+            },
+        ],
+        "key_concepts": [{"term": "общество"}],
+        "learning_outcomes": [{"text": "раскрывать смысл понятия «общество»"}],
+        "skills": [],
+        "interdisciplinary_links": [],
+        "exam_links": [],
+        "aliases": [],
+    }
+
+    patch = build_topic_card_enrichment(topic, card)
+
+    assert "content_summary" in patch
+    assert patch["content_summary"]
+    assert (
+        patch["provenance"]["content_summary"]["source_keys"]
+        == ["https://edsoo.ru/official-program.pdf"]
+    )

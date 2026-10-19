@@ -213,9 +213,9 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
         return patch
 
     official_source_keys = sorted({
-        item["source_key"]
+        item.get("source_key") or item.get("url")
         for item in card.get("source_references", [])
-        if item.get("source_key") and item.get("source_role") == "official_program"
+        if (item.get("source_key") or item.get("url")) and item.get("source_role") == "official_program"
     })
     concepts = card.get("key_concepts", [])
     outcomes = card.get("learning_outcomes", [])
@@ -223,9 +223,9 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
         return patch
 
     exam_source_keys = sorted({
-        item["source_key"]
+        item.get("source_key") or item.get("url")
         for item in card.get("source_references", [])
-        if item.get("source_key") and item.get("source_role") == "exam"
+        if (item.get("source_key") or item.get("url")) and item.get("source_role") == "exam"
     })
     source_key = official_source_keys[0] if official_source_keys else ""
     blueprint = card_topic.get("default_lesson_blueprint", {})
