@@ -5,6 +5,7 @@ from typing import Any
 
 ENRICHMENT_VERSION = "topic_card_enrichment_v0_1"
 PILOT_TOPIC_TITLE = "Как устроено общество"
+HISTORY_PILOT_TOPIC_TITLE = "Мировой экономический кризис и Великая депрессия"
 
 PILOT_ENRICHMENT = {
     "content_summary": (
@@ -89,6 +90,102 @@ PILOT_ENRICHMENT = {
         },
     ],
 }
+
+HISTORY_PILOT_ENRICHMENT = {
+    "content_summary": (
+        "Мировой экономический кризис 1929–1933 гг. стал тяжёлым потрясением "
+        "для экономики США и других стран и положил начало Великой депрессии. "
+        "Для объяснения кризиса важно различать его причины, непосредственные "
+        "проявления и социально-политические последствия, а биржевой крах 1929 года "
+        "не сводить к единственной причине кризиса. В США ответом на кризис стал "
+        "«Новый курс» Ф. Д. Рузвельта, связанный с усилением роли государства "
+        "в регулировании экономики и смягчении социальных последствий."
+    ),
+    "common_examples": [
+        {
+            "title": "Биржевой крах 1929 года",
+            "description": (
+                "Резкое падение биржевых котировок помогает показать начало острой "
+                "фазы кризиса, но не объясняет все его причины."
+            ),
+        },
+        {
+            "title": "Рост безработицы и спад производства",
+            "description": (
+                "Сокращение производства и занятости показывает связь экономического "
+                "кризиса с его социальными последствиями."
+            ),
+        },
+        {
+            "title": "«Новый курс» Ф. Д. Рузвельта",
+            "description": (
+                "Меры администрации Рузвельта позволяют рассмотреть изменение роли "
+                "государства в экономике и попытки смягчить последствия кризиса."
+            ),
+        },
+    ],
+    "counterexamples": [
+        {
+            "title": "Биржевой крах как единственная причина кризиса",
+            "description": (
+                "Такое объяснение чрезмерно упрощает причинность: необходимо учитывать "
+                "несколько взаимосвязанных экономических факторов."
+            ),
+        },
+        {
+            "title": "«Новый курс» мгновенно завершил Великую депрессию",
+            "description": (
+                "Такое утверждение смешивает начало реформ с длительным процессом "
+                "преодоления последствий кризиса."
+            ),
+        },
+    ],
+    "typical_misconceptions": [
+        "Биржевой крах 1929 года называют единственной причиной Великой депрессии.",
+        "Причины кризиса смешивают с его экономическими и социальными последствиями.",
+        "«Новый курс» Ф. Д. Рузвельта представляют как одномоментное и полное прекращение кризиса.",
+    ],
+    "essential_questions": [
+        "Почему биржевой крах 1929 года нельзя считать единственной причиной Великой депрессии?",
+        "Как экономический кризис повлиял на положение общества и политику государства?",
+        "Почему «Новый курс» Ф. Д. Рузвельта означал изменение роли государства в экономике?",
+    ],
+    "suitable_activities": [
+        {
+            "activity": "timeline",
+            "purpose": "Выстроить основные события темы в правильной хронологической последовательности.",
+            "student_action": (
+                "Расположить биржевой крах 1929 года, кризис 1929–1933 гг. "
+                "и начало «Нового курса» в 1933 году на временной линии."
+            ),
+        },
+        {
+            "activity": "causality_chain",
+            "purpose": "Различить причины, проявления и последствия кризиса.",
+            "student_action": (
+                "Построить причинную цепочку от экономических проблем конца 1920-х гг. "
+                "к спаду производства, безработице и социальным последствиям."
+            ),
+        },
+        {
+            "activity": "historical_comparison",
+            "purpose": "Сопоставить проблему кризиса и меры государственного ответа.",
+            "student_action": (
+                "Соотнести последствия кризиса с мерами «Нового курса» "
+                "и объяснить предполагаемую цель каждой меры."
+            ),
+        },
+        {
+            "activity": "source_analysis",
+            "purpose": "Извлечь из исторической информации факты о кризисе и государственной политике.",
+            "student_action": (
+                "Выделить в предложенном материале факты, относящиеся к причинам, "
+                "проявлениям, последствиям кризиса и мерам «Нового курса»."
+            ),
+        },
+    ],
+}
+
 
 _PENDING_STATUSES = {
     "pending_enrichment",
@@ -204,12 +301,24 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
     patch: dict[str, Any] = {}
     card_topic = card.get("topic", {})
     subject = card.get("subject", {})
+    enrichment = None
+
     if (
-        subject.get("code") != "SOCIAL_STUDIES"
-        or card.get("grade") != 9
-        or card.get("level") != "basic"
-        or card_topic.get("title") != PILOT_TOPIC_TITLE
+        subject.get("code") == "SOCIAL_STUDIES"
+        and card.get("grade") == 9
+        and card.get("level") == "basic"
+        and card_topic.get("title") == PILOT_TOPIC_TITLE
     ):
+        enrichment = PILOT_ENRICHMENT
+    elif (
+        subject.get("code") == "HISTORY"
+        and card.get("grade") == 10
+        and card.get("level") == "basic"
+        and card_topic.get("title") == HISTORY_PILOT_TOPIC_TITLE
+    ):
+        enrichment = HISTORY_PILOT_ENRICHMENT
+
+    if enrichment is None:
         return patch
 
     official_source_keys = sorted({
@@ -267,32 +376,32 @@ def build_topic_card_enrichment(topic: Any, card: Mapping[str, Any]) -> dict[str
 
     generated_fields = {
         "content_summary": {
-            "value": PILOT_ENRICHMENT["content_summary"],
+            "value": enrichment["content_summary"],
             "origin": "generated_candidate",
             "based_on": ["key_concepts", "learning_outcomes"],
         },
         "common_examples": {
-            "value": PILOT_ENRICHMENT["common_examples"],
+            "value": enrichment["common_examples"],
             "origin": "methodical_mapping",
             "based_on": ["key_concepts", "learning_outcomes", "skills"],
         },
         "counterexamples": {
-            "value": PILOT_ENRICHMENT["counterexamples"],
+            "value": enrichment["counterexamples"],
             "origin": "methodical_mapping",
             "based_on": ["key_concepts", "learning_outcomes"],
         },
         "typical_misconceptions": {
-            "value": PILOT_ENRICHMENT["typical_misconceptions"],
+            "value": enrichment["typical_misconceptions"],
             "origin": "generated_candidate",
             "based_on": ["key_concepts", "learning_outcomes"],
         },
         "essential_questions": {
-            "value": PILOT_ENRICHMENT["essential_questions"],
+            "value": enrichment["essential_questions"],
             "origin": "generated_candidate",
             "based_on": ["key_concepts", "learning_outcomes"],
         },
         "suitable_activities": {
-            "value": PILOT_ENRICHMENT["suitable_activities"],
+            "value": enrichment["suitable_activities"],
             "origin": "methodical_mapping",
             "based_on": ["key_concepts", "learning_outcomes", "skills"],
         },

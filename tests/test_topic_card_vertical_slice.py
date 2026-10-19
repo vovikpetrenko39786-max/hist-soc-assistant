@@ -494,3 +494,103 @@ def test_enrichment_uses_official_url_when_source_key_is_null():
         patch["provenance"]["content_summary"]["source_keys"]
         == ["https://edsoo.ru/official-program.pdf"]
     )
+
+
+def test_history_crisis_topic_can_be_enriched():
+    topic = SimpleNamespace(
+        content_summary=None,
+        common_examples=[],
+        counterexamples=[],
+        typical_misconceptions=[
+            "Смешение причины, повода и последствия события",
+            "Нарушение хронологии или перенос реалий другой эпохи",
+        ],
+        essential_questions=[
+            "Какие причины, ключевые события и последствия определяют место темы "
+            "«Мировой экономический кризис и Великая депрессия» в историческом процессе?"
+        ],
+        suitable_activities=[],
+        default_lesson_blueprint={
+            "sequence": [
+                "problem_or_source",
+                "chronology_and_context",
+                "causes",
+                "events_and_actors",
+                "consequences",
+                "source_or_map_practice",
+                "conclusion",
+                "reflection",
+            ],
+            "recommended_activities": [
+                "timeline",
+                "source_analysis",
+                "map_work",
+                "causality_chain",
+                "historical_comparison",
+            ],
+        },
+        provenance={},
+        derivation_status="pending_enrichment",
+        verification_status="pending_verification",
+    )
+
+    card = {
+        "subject": {"code": "HISTORY"},
+        "grade": 10,
+        "level": "basic",
+        "topic": {
+            "title": "Мировой экономический кризис и Великая депрессия",
+            "default_lesson_blueprint": topic.default_lesson_blueprint,
+            "reflection_patterns": [
+                "return_to_goal",
+                "error_reflection",
+                "exit_ticket",
+            ],
+            "assessment_skills": [
+                "establish_causality",
+                "identify",
+                "compare",
+                "analyze_source",
+            ],
+            "difficulty_level": 4,
+            "abstraction_level": 3,
+        },
+        "aliases": [],
+        "key_concepts": [
+            {"term": "мировой экономический кризис", "importance": "required"},
+            {"term": "Великая депрессия", "importance": "required"},
+            {"term": "«Новый курс» Ф. Д. Рузвельта", "importance": "required"},
+        ],
+        "learning_outcomes": [
+            {
+                "text": "характеризовать ключевые события, процессы и участников по теме"
+            },
+            {
+                "text": "устанавливать причинно-следственные связи и объяснять историческое значение процессов"
+            },
+        ],
+        "skills": [
+            {"code": "establish_causality"},
+            {"code": "analyze_source"},
+        ],
+        "interdisciplinary_links": [],
+        "exam_links": [],
+        "typical_misconceptions": topic.typical_misconceptions,
+        "common_examples": [],
+        "counterexamples": [],
+        "essential_questions": topic.essential_questions,
+        "source_references": [
+            {
+                "source_key": "HISTORY_10_OFFICIAL",
+                "source_role": "official_program",
+            }
+        ],
+    }
+
+    patch = build_topic_card_enrichment(topic, card)
+
+    assert patch["content_summary"]
+    assert patch["common_examples"]
+    assert patch["counterexamples"]
+    assert patch["suitable_activities"]
+    assert patch["derivation_status"] == "mixed_official_and_methodical"
