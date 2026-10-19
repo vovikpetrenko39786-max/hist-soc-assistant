@@ -3,7 +3,7 @@ import uuid
 
 from app.schemas.generation import LessonArtifact, LessonGenerationRequest
 from app.services.generation_context import GroundedContextBuilder
-from app.services.llm_provider import TemplateLessonProvider
+from app.services.llm_provider import HttpLessonProvider, TemplateLessonProvider
 from app.services.quality_gate import LessonQualityGate
 
 
@@ -190,3 +190,23 @@ def test_request_requires_topic():
         assert False, "validation should fail"
     except Exception:
         pass
+
+
+def test_http_provider_uses_strict_lesson_artifact_schema():
+    schema = HttpLessonProvider._lesson_artifact_schema()
+
+    assert schema["additionalProperties"] is False
+    assert set(schema["required"]) == set(schema["properties"])
+
+    # Regression: the real LLM previously returned objects here,
+    # while LessonArtifact requires lists of strings.
+    assert schema["properties"]["key_concepts"]["items"]["type"] == "string"
+    assert schema["properties"]["differentiation"]["items"]["type"] == "string"
+
+    timeline = schema["$defs"]["LessonTimelineStep"]
+    assert timeline["additionalProperties"] is False
+    assert set(timeline["required"]) == set(timeline["properties"])
+
+    source_reference = schema["$defs"]["SourceReference"]
+    assert source_reference["additionalProperties"] is False
+    assert set(source_reference["required"]) == set(source_reference["properties"])

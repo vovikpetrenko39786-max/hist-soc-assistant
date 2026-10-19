@@ -6,6 +6,7 @@ from typing import Protocol
 import httpx
 
 from app.core.config import get_settings
+from app.schemas.generation import LessonArtifact
 
 settings = get_settings()
 
@@ -201,6 +202,31 @@ class HttpLessonProvider:
 
     name = "http"
 
+    @staticmethod
+    def _lesson_artifact_schema() -> dict:
+        """Convert Pydantic JSON Schema to OpenAI strict Structured Outputs schema."""
+        schema = LessonArtifact.model_json_schema()
+
+        def normalize(node):
+            if isinstance(node, dict):
+                # Defaults are not needed in the generation contract.
+                node.pop("default", None)
+
+                properties = node.get("properties")
+                if isinstance(properties, dict):
+                    node["additionalProperties"] = False
+                    node["required"] = list(properties.keys())
+
+                for value in node.values():
+                    normalize(value)
+
+            elif isinstance(node, list):
+                for value in node:
+                    normalize(value)
+
+        normalize(schema)
+        return schema
+
     def __init__(self):
         if not settings.generation_http_base_url:
             raise GenerationProviderError(
@@ -227,6 +253,14 @@ class HttpLessonProvider:
         payload = {
             "model": self.model,
             "temperature": settings.generation_temperature,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "lesson_artifact",
+                    "strict": True,
+                    "schema": self._lesson_artifact_schema(),
+                },
+            },
             "messages": [
                 {"role": "system", "content": self._system_prompt()},
                 {
