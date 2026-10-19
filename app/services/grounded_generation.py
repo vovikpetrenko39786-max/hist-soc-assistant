@@ -26,6 +26,45 @@ def _json_safe(value):
     )
 
 
+def _ground_source_references(
+    artifact: LessonArtifact,
+    source_manifest: list[dict],
+) -> None:
+    """Replace LLM-produced source metadata with canonical manifest metadata.
+
+    The model may choose a chunk_id, but metadata for a known chunk is owned
+    by the retrieval manifest. Unknown chunk_ids are deliberately left
+    untouched so the quality gate can reject them.
+    """
+    manifest_by_chunk = {
+        str(item["chunk_id"]): item
+        for item in source_manifest
+        if item.get("chunk_id")
+    }
+
+    for ref in artifact.source_references:
+        manifest = manifest_by_chunk.get(str(ref.chunk_id))
+        if manifest is None:
+            continue
+
+        if manifest.get("source_id") is not None:
+            ref.source_id = str(manifest["source_id"])
+
+        ref.source_key = manifest.get("source_key")
+        ref.title = (
+            manifest.get("title")
+            or manifest.get("source_title")
+            or ref.title
+        )
+        ref.url = manifest.get("url")
+        ref.section = manifest.get("section")
+        ref.page_pdf_start = manifest.get("page_pdf_start")
+        ref.page_pdf_end = manifest.get("page_pdf_end")
+        ref.page_print_start = manifest.get("page_print_start")
+        ref.page_print_end = manifest.get("page_print_end")
+        ref.quote_safe = bool(manifest.get("quote_safe", False))
+
+
 class GroundedGenerationError(RuntimeError):
     pass
 
@@ -113,6 +152,10 @@ class GroundedLessonService:
         try:
             raw = await provider.generate_lesson(context)
             artifact = LessonArtifact.model_validate(raw)
+            _ground_source_references(
+                artifact,
+                context["source_manifest"],
+            )
         except (GenerationProviderError, ValidationError) as exc:
             raise GroundedGenerationError(str(exc)) from exc
 

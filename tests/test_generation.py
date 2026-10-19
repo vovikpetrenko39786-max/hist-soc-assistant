@@ -242,3 +242,82 @@ def test_quality_gate_accepts_concepts_with_definitions():
 
     assert check["passed"] is True
     assert "100%" in check["message"]
+
+
+def test_source_reference_metadata_is_grounded_from_manifest():
+    from app.services.grounded_generation import _ground_source_references
+
+    card = topic_card()
+    context = GroundedContextBuilder().build_lesson_context(
+        request(), card, retrieval()
+    )
+    artifact = LessonArtifact.model_validate(
+        asyncio.run(TemplateLessonProvider().generate_lesson(context))
+    )
+
+    ref = artifact.source_references[0]
+    manifest = next(
+        item
+        for item in context["source_manifest"]
+        if str(item["chunk_id"]) == str(ref.chunk_id)
+    )
+
+    # Regression: a real LLM swapped page_pdf_end between two chunks
+    # from the same official document.
+    ref.source_id = "invented-source-id"
+    ref.title = "Invented title"
+    ref.url = "https://example.invalid/wrong"
+    ref.section = "wrong section"
+    ref.page_pdf_start = 999
+    ref.page_pdf_end = 1000
+    ref.page_print_start = 999
+    ref.page_print_end = 1000
+    ref.quote_safe = not bool(manifest.get("quote_safe", False))
+
+    _ground_source_references(
+        artifact,
+        context["source_manifest"],
+    )
+
+    assert ref.source_id == str(manifest["source_id"])
+    assert ref.source_key == manifest.get("source_key")
+    assert ref.title == (
+        manifest.get("title")
+        or manifest.get("source_title")
+    )
+    assert ref.url == manifest.get("url")
+    assert ref.section == manifest.get("section")
+    assert ref.page_pdf_start == manifest.get("page_pdf_start")
+    assert ref.page_pdf_end == manifest.get("page_pdf_end")
+    assert ref.page_print_start == manifest.get("page_print_start")
+    assert ref.page_print_end == manifest.get("page_print_end")
+    assert ref.quote_safe == bool(manifest.get("quote_safe", False))
+
+    report = LessonQualityGate().evaluate(
+        artifact,
+        card,
+        context["source_manifest"],
+    )
+    page_check = next(
+        x for x in report["checks"]
+        if x["code"] == "page_grounding"
+    )
+    assert page_check["passed"] is True
+
+    # Security regression: canonicalization must not hide an invented chunk.
+    ref.chunk_id = str(uuid.uuid4())
+    _ground_source_references(
+        artifact,
+        context["source_manifest"],
+    )
+
+    report = LessonQualityGate().evaluate(
+        artifact,
+        card,
+        context["source_manifest"],
+    )
+    subset_check = next(
+        x for x in report["checks"]
+        if x["code"] == "source_subset"
+    )
+    assert subset_check["passed"] is False
