@@ -252,7 +252,27 @@ class HttpLessonProvider:
             "Не выдавай semantic snippets за дословные цитаты."
         )
 
-    async def generate_lesson(self, context: dict) -> dict:
+    @staticmethod
+    def _topic_enrichment_system_prompt() -> str:
+        return (
+            "Ты — методический генератор обогащения Topic Card. "
+            "Возвращай ТОЛЬКО JSON-объект, соответствующий схеме "
+            "TopicEnrichmentArtifact. Используй только предоставленный контекст темы. "
+            "Не изменяй официальные данные: предмет, класс, уровень, название темы, "
+            "ключевые понятия, результаты обучения, навыки и источники. "
+            "Не добавляй URL, provenance или служебные поля. "
+            "Формулировки должны быть предметно конкретными и пригодными для урока."
+        )
+
+    async def _generate_structured(
+        self,
+        context: dict,
+        *,
+        schema_name: str,
+        schema: dict,
+        system_prompt: str,
+        artifact_label: str,
+    ) -> dict:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
@@ -263,16 +283,20 @@ class HttpLessonProvider:
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "lesson_artifact",
+                    "name": schema_name,
                     "strict": True,
-                    "schema": self._lesson_artifact_schema(),
+                    "schema": schema,
                 },
             },
             "messages": [
-                {"role": "system", "content": self._system_prompt()},
+                {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
-                    "content": json.dumps(context, ensure_ascii=False, default=str),
+                    "content": json.dumps(
+                        context,
+                        ensure_ascii=False,
+                        default=str,
+                    ),
                 },
             ],
         }
@@ -297,7 +321,9 @@ class HttpLessonProvider:
         try:
             content = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
-            raise GenerationProviderError("Unexpected generation response shape") from exc
+            raise GenerationProviderError(
+                "Unexpected generation response shape"
+            ) from exc
 
         if isinstance(content, dict):
             return content
@@ -312,8 +338,26 @@ class HttpLessonProvider:
             return json.loads(text)
         except json.JSONDecodeError as exc:
             raise GenerationProviderError(
-                "Model did not return valid JSON LessonArtifact"
+                f"Model did not return valid JSON {artifact_label}"
             ) from exc
+
+    async def generate_lesson(self, context: dict) -> dict:
+        return await self._generate_structured(
+            context,
+            schema_name="lesson_artifact",
+            schema=self._lesson_artifact_schema(),
+            system_prompt=self._system_prompt(),
+            artifact_label="LessonArtifact",
+        )
+
+    async def generate_topic_enrichment(self, context: dict) -> dict:
+        return await self._generate_structured(
+            context,
+            schema_name="topic_enrichment_artifact",
+            schema=self._topic_enrichment_artifact_schema(),
+            system_prompt=self._topic_enrichment_system_prompt(),
+            artifact_label="TopicEnrichmentArtifact",
+        )
 
 
 def get_generation_provider() -> GenerationProvider:

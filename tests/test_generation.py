@@ -1,7 +1,11 @@
 import asyncio
 import uuid
 
-from app.schemas.generation import LessonArtifact, LessonGenerationRequest
+from app.schemas.generation import (
+    LessonArtifact,
+    LessonGenerationRequest,
+    TopicEnrichmentArtifact,
+)
 from app.services.generation_context import GroundedContextBuilder
 from app.services.llm_provider import HttpLessonProvider, TemplateLessonProvider
 from app.services.quality_gate import LessonQualityGate
@@ -228,6 +232,109 @@ def test_http_provider_uses_strict_topic_enrichment_schema():
     activity = schema["$defs"]["TopicEnrichmentActivity"]
     assert activity["additionalProperties"] is False
     assert set(activity["required"]) == set(activity["properties"])
+
+
+def test_http_provider_generates_structured_topic_enrichment(monkeypatch):
+    captured = {}
+
+    result_payload = {
+        "content_summary": "Краткое предметное содержание темы.",
+        "common_examples": [
+            {
+                "title": "Пример",
+                "description": "Предметный пример по теме.",
+            }
+        ],
+        "counterexamples": [
+            {
+                "title": "Контрпример",
+                "description": "Ситуация, которую нельзя считать корректным примером.",
+            }
+        ],
+        "typical_misconceptions": [
+            "Типичная ошибка учащегося.",
+        ],
+        "essential_questions": [
+            "Какой ключевой вопрос раскрывает содержание темы?",
+        ],
+        "suitable_activities": [
+            {
+                "activity": "source_analysis",
+                "purpose": "Проверить понимание содержания.",
+                "student_action": "Проанализировать материал и сформулировать вывод.",
+            }
+        ],
+    }
+
+    class FakeResponse:
+        status_code = 200
+        text = ""
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": result_payload,
+                        }
+                    }
+                ]
+            }
+
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs):
+            captured["client_kwargs"] = kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def post(self, url, *, headers, json):
+            captured["url"] = url
+            captured["headers"] = headers
+            captured["payload"] = json
+            return FakeResponse()
+
+    monkeypatch.setattr(
+        "app.services.llm_provider.httpx.AsyncClient",
+        FakeAsyncClient,
+    )
+
+    provider = object.__new__(HttpLessonProvider)
+    provider.base_url = "https://example.test/v1"
+    provider.api_key = "test-key"
+    provider.model = "test-model"
+
+    raw = asyncio.run(
+        provider.generate_topic_enrichment(
+            {
+                "topic_card": {
+                    "subject": {"code": "HISTORY"},
+                    "grade": 10,
+                    "level": "basic",
+                    "topic": {"title": "Тестовая тема"},
+                }
+            }
+        )
+    )
+
+    artifact = TopicEnrichmentArtifact.model_validate(raw)
+
+    assert artifact.content_summary == result_payload["content_summary"]
+
+    payload = captured["payload"]
+    assert payload["response_format"]["type"] == "json_schema"
+    assert (
+        payload["response_format"]["json_schema"]["name"]
+        == "topic_enrichment_artifact"
+    )
+    assert payload["response_format"]["json_schema"]["strict"] is True
+    assert "TopicEnrichmentArtifact" in payload["messages"][0]["content"]
 
 
 def test_quality_gate_accepts_concepts_with_definitions():
