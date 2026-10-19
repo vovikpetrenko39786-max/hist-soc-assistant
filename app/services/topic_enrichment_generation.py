@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 
 from collections.abc import Mapping
 from typing import Any, Protocol
+
+import pymorphy3
 
 from app.schemas.generation import TopicEnrichmentArtifact
 from app.services.generation_context import GroundedContextBuilder
@@ -49,6 +52,104 @@ _TOKEN_RE = re.compile(
     r"[A-Za-zА-Яа-яЁё0-9]+",
     re.UNICODE,
 )
+
+_CYRILLIC_WORD_RE = re.compile(
+    r"[А-Яа-яЁё]{5,}",
+    re.UNICODE,
+)
+
+_SHORT_LEFT_WORDS = {
+    "и",
+    "а",
+    "но",
+    "что",
+    "как",
+    "не",
+    "в",
+    "к",
+    "с",
+    "о",
+    "у",
+    "на",
+    "по",
+    "из",
+}
+
+
+@lru_cache(maxsize=1)
+def _morph_analyzer() -> pymorphy3.MorphAnalyzer:
+    return pymorphy3.MorphAnalyzer()
+
+
+def _joined_word_split(
+    word: str,
+) -> tuple[str, str] | None:
+    low = word.casefold()
+    morph = _morph_analyzer()
+
+    if morph.word_is_known(low):
+        return None
+
+    for index in range(1, len(low)):
+        left = low[:index]
+        right = low[index:]
+
+        if not morph.word_is_known(left):
+            continue
+        if not morph.word_is_known(right):
+            continue
+
+        normal_lengths = (
+            len(left) >= 3
+            and len(right) >= 3
+        )
+        short_function_word = (
+            left in _SHORT_LEFT_WORDS
+            and len(right) >= 4
+        )
+
+        if normal_lengths or short_function_word:
+            return left, right
+
+    return None
+
+
+def _artifact_texts(
+    artifact: TopicEnrichmentArtifact,
+):
+    payload = artifact.model_dump(mode="python")
+
+    def walk(value):
+        if isinstance(value, str):
+            yield value
+            return
+
+        if isinstance(value, Mapping):
+            for item in value.values():
+                yield from walk(item)
+            return
+
+        if isinstance(value, list):
+            for item in value:
+                yield from walk(item)
+
+    yield from walk(payload)
+
+
+def _validate_text_quality(
+    artifact: TopicEnrichmentArtifact,
+) -> None:
+    for text in _artifact_texts(artifact):
+        for word in _CYRILLIC_WORD_RE.findall(text):
+            split = _joined_word_split(word)
+            if split is None:
+                continue
+
+            left, right = split
+            raise TopicEnrichmentGenerationError(
+                "Generated enrichment contains a suspicious "
+                f"joined word: {word} -> {left} + {right}"
+            )
 
 
 def _token_key(token: str) -> str:
@@ -170,6 +271,8 @@ def _validate_generated_artifact(
         raise TopicEnrichmentGenerationError(
             "Generated common examples only restate key concepts."
         )
+
+    _validate_text_quality(artifact)
 
     if not context.get("available_materials"):
         for activity in artifact.suitable_activities:

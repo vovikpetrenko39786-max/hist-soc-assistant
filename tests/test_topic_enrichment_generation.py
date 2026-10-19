@@ -338,3 +338,101 @@ def test_context_filters_single_concept_retrieval_noise():
         "2008"
         not in context["retrieved_evidence"][0]["snippet"]
     )
+
+
+@pytest.mark.parametrize(
+    "bad_text, expected_split",
+    [
+        ("процессы имеры", "имеры -> и + меры"),
+        (
+            "экономическийкризис",
+            "экономическийкризис -> экономический + кризис",
+        ),
+        (
+            "последствиямикризиса",
+            "последствиямикризиса -> последствиями + кризиса",
+        ),
+        (
+            "чтобиржевой",
+            "чтобиржевой -> что + биржевой",
+        ),
+        (
+            "затемсформулировать",
+            "затемсформулировать -> затем + сформулировать",
+        ),
+    ],
+)
+def test_service_rejects_suspicious_joined_russian_words(
+    bad_text,
+    expected_split,
+):
+    class FakeProvider:
+        async def generate_topic_enrichment(self, context):
+            return {
+                "content_summary": bad_text,
+                "common_examples": [
+                    {
+                        "title": "Безработица",
+                        "description": "Проявление экономического кризиса.",
+                    }
+                ],
+                "counterexamples": [],
+                "typical_misconceptions": [],
+                "essential_questions": [],
+                "suitable_activities": [],
+            }
+
+    with pytest.raises(
+        TopicEnrichmentGenerationError,
+        match="suspicious joined word",
+    ) as exc_info:
+        asyncio.run(
+            TopicEnrichmentGenerationService(
+                FakeProvider()
+            ).generate(
+                topic_card(),
+                retrieval(),
+            )
+        )
+
+    assert expected_split in str(exc_info.value)
+
+
+def test_service_accepts_normal_russian_words():
+    class FakeProvider:
+        async def generate_topic_enrichment(self, context):
+            return {
+                "content_summary": (
+                    "Экономический кризис имел серьёзные последствия."
+                ),
+                "common_examples": [
+                    {
+                        "title": "Безработица",
+                        "description": (
+                            "Последствиями кризиса стали "
+                            "социальные трудности."
+                        ),
+                    }
+                ],
+                "counterexamples": [],
+                "typical_misconceptions": [
+                    "Биржевой крах нельзя считать единственной причиной."
+                ],
+                "essential_questions": [
+                    "Как сформулировать исторически обоснованный вывод?"
+                ],
+                "suitable_activities": [],
+            }
+
+    artifact = asyncio.run(
+        TopicEnrichmentGenerationService(
+            FakeProvider()
+        ).generate(
+            topic_card(),
+            retrieval(),
+        )
+    )
+
+    assert artifact.content_summary.startswith(
+        "Экономический кризис"
+    )
