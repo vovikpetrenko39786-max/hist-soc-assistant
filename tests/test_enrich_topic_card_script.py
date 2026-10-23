@@ -2,8 +2,6 @@ import asyncio
 from types import SimpleNamespace
 from uuid import UUID
 
-import pytest
-
 import scripts.enrich_topic_card as script
 from app.models.catalog import Topic
 
@@ -15,6 +13,7 @@ def test_enrich_topic_selects_topic_by_uuid_and_dry_runs(monkeypatch):
         id=topic_id,
         content_summary=None,
     )
+    original_topic = vars(topic).copy()
 
     class FakeSession:
         def __init__(self):
@@ -77,14 +76,13 @@ def test_enrich_topic_selects_topic_by_uuid_and_dry_runs(monkeypatch):
     assert session.lookup == (Topic, topic_id)
     assert session.committed is False
     assert session.rolled_back is True
-    assert topic.content_summary == "Enriched summary"
+    assert vars(topic) == original_topic
 
 
-@pytest.mark.parametrize("apply", [False, True])
-def test_generate_mode_respects_explicit_apply(
+def test_generate_mode_saves_candidate_without_applying(
     monkeypatch,
     capsys,
-    apply,
+    tmp_path,
 ):
     topic_id = UUID("3b5a578c-4352-4ca6-bd79-19d48aed5365")
 
@@ -92,6 +90,7 @@ def test_generate_mode_respects_explicit_apply(
         id=topic_id,
         content_summary=None,
     )
+    original_topic = vars(topic).copy()
 
     card = {
         "subject": {"code": "HISTORY", "name": "История"},
@@ -161,12 +160,8 @@ def test_generate_mode_respects_explicit_apply(
                 "warnings": [],
                 "hits": [
                     {
-                        "chunk_id": (
-                            "11111111-1111-1111-1111-111111111111"
-                        ),
-                        "source_id": (
-                            "22222222-2222-2222-2222-222222222222"
-                        ),
+                        "chunk_id": ("11111111-1111-1111-1111-111111111111"),
+                        "source_id": ("22222222-2222-2222-2222-222222222222"),
                         "source_key": "official-source",
                         "source_title": "Official program",
                         "url": None,
@@ -213,35 +208,33 @@ def test_generate_mode_respects_explicit_apply(
     result = asyncio.run(
         script.enrich_topic(
             topic_id=topic_id,
-            apply=apply,
+            apply=False,
             generate=True,
+            candidate_dir=tmp_path,
         )
     )
 
     assert result == 0
-    assert session.committed is apply
-    assert session.rolled_back is (not apply)
+    assert session.committed is False
+    assert session.rolled_back is True
+    assert vars(topic) == original_topic
+
+    candidate_files = list(tmp_path.glob("*.json"))
+    assert len(candidate_files) == 1
+    candidate = script.json.loads(candidate_files[0].read_text(encoding="utf-8"))
+    assert candidate["topic_id"] == str(topic_id)
+    assert candidate["topic_card_hash"] == script._topic_card_hash(card)
+    assert candidate["evidence_chunk_ids"] == ["11111111-1111-1111-1111-111111111111"]
+    assert candidate["proposed_patch"]["content_summary"] == "Generated summary"
+    assert candidate["candidate_id"] == script._candidate_id(script._candidate_payload(candidate))
+    assert candidate_files[0].name == f"{candidate['candidate_id']}.json"
 
     output = capsys.readouterr().out
 
+    assert '"candidate_id"' in output
     assert '"proposed_patch"' in output
     assert '"evidence_chunk_ids"' in output
     assert '"pending_review"' in output
     assert '"generated_candidate"' in output
     assert '"source_chunk_ids"' in output
-
-    if apply:
-        assert topic.content_summary == "Generated summary"
-        assert topic.verification_status == "pending_review"
-        assert (
-            topic.provenance["content_summary"]["status"]
-            == "pending_review"
-        )
-        assert (
-            topic.provenance["content_summary"]["origin"]
-            == "generated_candidate"
-        )
-        assert "Generated enrichment changes committed." in output
-    else:
-        assert topic.content_summary is None
-        assert "proposed patch was not committed" in output
+    assert "Topic was not changed" in output

@@ -118,14 +118,14 @@ outcomes, concepts, lesson blueprint, and source links; it does not import the
 dataset or modify catalog relationships. The default is a read-only dry run:
 
 ```bash
-python -m scripts.enrich_topic_card
+python -m scripts.enrich_topic_card --topic-id <TOPIC_UUID>
 ```
 
 To persist the enrichment in the database configured for the process, pass
 `--apply` explicitly:
 
 ```bash
-python -m scripts.enrich_topic_card --apply
+python -m scripts.enrich_topic_card --topic-id <TOPIC_UUID> --apply
 ```
 
 The generated summary and candidate pedagogical examples/questions are marked
@@ -134,6 +134,33 @@ Existing generic reflection patterns and lesson blueprints are retained and
 identified in provenance as system fallbacks, not topic-specific enrichment.
 Reviewed fields are not overwritten, and verification is never upgraded to
 `verified`.
+
+### Generated enrichment candidates
+
+Generated enrichment uses a two-phase workflow. Generation is always read-only
+for the Topic and saves the exact artifact, proposed patch, evidence chunk IDs,
+Topic ID, Topic Card context hash, and deterministic SHA-256 candidate ID to
+the ignored local `outputs/topic-enrichment-candidates/` store:
+
+```bash
+python -m scripts.enrich_topic_card --topic-id <TOPIC_UUID> --generate
+```
+
+After reviewing the saved JSON, apply that exact candidate by the ID printed by
+the generation command:
+
+```bash
+python -m scripts.enrich_topic_card \
+  --topic-id <TOPIC_UUID> \
+  --apply-candidate <CANDIDATE_ID>
+```
+
+Applying a candidate validates its schema, Topic ID, allowed patch fields, and
+content hash, then confirms that the Topic Card context is unchanged and still
+produces the same patch from the saved artifact and evidence. The Topic row is
+locked during this check and commit. Applying does not call the generation
+provider or generate new content. `--generate --apply` is rejected so generation
+and persistence cannot happen in one step.
 
 ## Статистика v0.4
 
