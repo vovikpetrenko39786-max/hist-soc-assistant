@@ -178,6 +178,8 @@ def test_service_generates_and_validates_artifact():
                         "student_action": (
                             "Построить причинно-следственную цепочку."
                         ),
+                        "expected_answer": "Сокращение производства и рост безработицы.",
+                        "assessment_criteria": ["Названы оба проявления кризиса."],
                     }
                 ],
             }
@@ -436,3 +438,116 @@ def test_service_accepts_normal_russian_words():
     assert artifact.content_summary.startswith(
         "Экономический кризис"
     )
+
+
+def guided_artifact():
+    return {
+        "content_summary": "Кризис сопровождался сокращением производства и ростом безработицы.",
+        "common_examples": [{"title": "Безработица", "description": "Рост безработицы."}],
+        "counterexamples": [],
+        "typical_misconceptions": [],
+        "essential_questions": [],
+        "suitable_activities": [{
+            "activity": "Проявления кризиса",
+            "purpose": "Назвать проявления кризиса.",
+            "student_action": "Назовите два проявления кризиса.",
+            "expected_answer": "Сокращение производства и рост безработицы.",
+            "assessment_criteria": ["Названо сокращение производства.", "Назван рост безработицы."],
+        }],
+    }
+
+
+def generate_payload(payload):
+    class FakeProvider:
+        async def generate_topic_enrichment(self, context):
+            return payload
+
+    return asyncio.run(
+        TopicEnrichmentGenerationService(FakeProvider()).generate(topic_card(), retrieval())
+    )
+
+
+@pytest.mark.parametrize("field", ["expected_answer", "assessment_criteria"])
+def test_new_generation_rejects_missing_teacher_guidance(field):
+    payload = guided_artifact()
+    del payload["suitable_activities"][0][field]
+    with pytest.raises(TopicEnrichmentGenerationError, match="requires"):
+        generate_payload(payload)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("expected_answer", None),
+    ("expected_answer", ""),
+    ("expected_answer", "   "),
+    ("assessment_criteria", None),
+    ("assessment_criteria", []),
+    ("assessment_criteria", ["  "]),
+    ("assessment_criteria", ["Есть ответ.", ""]),
+])
+def test_new_generation_rejects_empty_teacher_guidance(field, value):
+    payload = guided_artifact()
+    payload["suitable_activities"][0][field] = value
+    with pytest.raises(TopicEnrichmentGenerationError, match="requires"):
+        generate_payload(payload)
+
+
+def test_teacher_guidance_survives_generation_and_json_round_trip():
+    from app.schemas.generation import TopicEnrichmentArtifact
+
+    payload = guided_artifact()
+    artifact = generate_payload(payload)
+    restored = TopicEnrichmentArtifact.model_validate_json(artifact.model_dump_json())
+    assert restored.model_dump(mode="json") == payload
+
+
+@pytest.mark.parametrize("legacy", [True, False])
+def test_saved_candidate_guidance_round_trip_preserves_hash(tmp_path, legacy):
+    from uuid import UUID
+    from app.schemas.generation import TopicEnrichmentArtifact
+    import scripts.enrich_topic_card as script
+
+    payload = guided_artifact()
+    if legacy:
+        del payload["suitable_activities"][0]["expected_answer"]
+        del payload["suitable_activities"][0]["assessment_criteria"]
+    artifact = TopicEnrichmentArtifact.model_validate(payload)
+    assert artifact.model_dump(mode="python") == payload
+    assert artifact.model_dump(mode="json") == payload
+    assert script.json.loads(artifact.model_dump_json()) == payload
+    topic_id = UUID("3b5a578c-4352-4ca6-bd79-19d48aed5365")
+    patch = {
+        "suitable_activities": payload["suitable_activities"],
+        "verification_status": "pending_review",
+        "provenance": {"suitable_activities": {
+            "origin": "generated_candidate",
+            "status": "pending_review",
+            "source_chunk_ids": ["evidence-1"],
+        }},
+    }
+    candidate = script._build_candidate(
+        topic_id=topic_id,
+        topic_card_hash="0" * 64,
+        artifact=payload,
+        proposed_patch=patch,
+        evidence_chunk_ids=["evidence-1"],
+    )
+    script._save_candidate(candidate, tmp_path)
+    assert script._load_candidate(
+        candidate_id=candidate["candidate_id"], topic_id=topic_id, candidate_dir=tmp_path,
+    ) == candidate
+
+
+def test_provider_schema_requests_teacher_guidance():
+    from app.services.llm_provider import HttpLessonProvider
+
+    schema = HttpLessonProvider._topic_enrichment_artifact_schema()
+    activity = schema["$defs"]["TopicEnrichmentActivity"]
+    assert {"expected_answer", "assessment_criteria"} <= set(activity["required"])
+    assert activity["additionalProperties"] is False
+
+
+def test_text_quality_check_covers_teacher_guidance():
+    payload = guided_artifact()
+    payload["suitable_activities"][0]["expected_answer"] = "экономическийкризис"
+    with pytest.raises(TopicEnrichmentGenerationError, match="suspicious joined word"):
+        generate_payload(payload)

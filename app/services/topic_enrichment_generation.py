@@ -292,6 +292,18 @@ def _validate_generated_artifact(
                     f"learning material: {match.group(0)}"
                 )
 
+    for activity in artifact.suitable_activities:
+        if not activity.expected_answer or not activity.expected_answer.strip():
+            raise TopicEnrichmentGenerationError(
+                "Generated activity requires a non-empty expected answer."
+            )
+        if not activity.assessment_criteria or any(
+            not criterion.strip() for criterion in activity.assessment_criteria
+        ):
+            raise TopicEnrichmentGenerationError(
+                "Generated activity requires non-empty assessment criteria."
+            )
+
 
 def build_topic_enrichment_context(
     card: Mapping[str, Any],

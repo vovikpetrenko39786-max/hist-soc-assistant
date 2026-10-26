@@ -1,7 +1,7 @@
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_serializer, model_validator
 
 
 class LessonGenerationRequest(BaseModel):
@@ -91,6 +91,17 @@ class TopicEnrichmentActivity(BaseModel):
     activity: str
     purpose: str
     student_action: str
+    # Optional on load for existing hashed candidates; required for new generation.
+    expected_answer: str | None = None
+    assessment_criteria: list[str] | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_shape(self, handler):
+        data = handler(self)
+        for field in ("expected_answer", "assessment_criteria"):
+            if field not in self.model_fields_set:
+                data.pop(field, None)
+        return data
 
 
 class TopicEnrichmentArtifact(BaseModel):
