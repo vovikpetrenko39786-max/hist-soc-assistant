@@ -283,7 +283,7 @@ class RetrievalService:
             "page_pdf_end": chunk.page_pdf_end,
             "page_print_start": chunk.page_print,
             "page_print_end": chunk.page_print_end,
-            "snippet": self._snippet(chunk.text, request.query, request.exact_phrase),
+            "snippet": self._snippet(chunk.text, request.query, request.exact_phrase, request.snippet_chars),
             "exact_match": candidate.exact_match,
             "quote_safe": bool(request.exact_phrase and candidate.exact_match),
             "lexical_rank": candidate.lexical_rank,

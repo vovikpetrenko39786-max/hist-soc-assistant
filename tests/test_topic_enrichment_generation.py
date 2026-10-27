@@ -140,6 +140,12 @@ def test_service_generates_and_validates_artifact():
     captured = {}
 
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             captured["context"] = context
             return {
@@ -208,6 +214,12 @@ def test_context_rejects_topic_without_official_evidence():
 
 def test_service_rejects_examples_that_only_repeat_key_concepts():
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return {
                 "content_summary": "Summary",
@@ -236,6 +248,12 @@ def test_service_rejects_examples_that_only_repeat_key_concepts():
 
 def test_service_rejects_unavailable_learning_material():
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return {
                 "content_summary": "Summary",
@@ -369,6 +387,12 @@ def test_service_rejects_suspicious_joined_russian_words(
     expected_split,
 ):
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return {
                 "content_summary": bad_text,
@@ -402,6 +426,12 @@ def test_service_rejects_suspicious_joined_russian_words(
 
 def test_service_accepts_normal_russian_words():
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return {
                 "content_summary": (
@@ -459,6 +489,12 @@ def guided_artifact():
 
 def generate_payload(payload):
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return payload
 
@@ -551,3 +587,41 @@ def test_text_quality_check_covers_teacher_guidance():
     payload["suitable_activities"][0]["expected_answer"] = "экономическийкризис"
     with pytest.raises(TopicEnrichmentGenerationError, match="suspicious joined word"):
         generate_payload(payload)
+
+
+@pytest.mark.parametrize("fault", ["evidence", "claims", "answer", "criteria", "issue", "missing", "duplicate", "unknown", "invalid", "unavailable"])
+def test_semantic_review_blocks_bad_or_incomplete_review(fault):
+    from pydantic import ValidationError
+    from app.services.llm_provider import GenerationProviderError
+    class Provider:
+        async def generate_topic_enrichment(self, context):
+            return guided_artifact()
+
+        async def review_topic_enrichment(self, context, artifact):
+            assert artifact == guided_artifact()
+            assert context["retrieved_evidence"][0]["snippet"] == retrieval()["hits"][0]["snippet"]
+            if fault == "unavailable":
+                raise GenerationProviderError("review unavailable")
+            result = {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                      "activities": [{"activity_index": 0, "answer_complete": True,
+                                      "criteria_aligned": True, "issues": []}]}
+            if fault == "evidence": result["evidence_sufficient"] = False
+            if fault == "claims": result["claims_grounded"] = False
+            if fault == "answer": result["activities"][0]["answer_complete"] = False
+            if fault == "criteria": result["activities"][0]["criteria_aligned"] = False
+            if fault == "issue": result["activities"][0]["issues"] = ["Missing requested example"]
+            if fault == "missing": result["activities"] = []
+            if fault == "duplicate": result["activities"] *= 2
+            if fault == "unknown": result["activities"][0]["activity_index"] = 1
+            if fault == "invalid": result["claims_grounded"] = "true"
+            return result
+    with pytest.raises((TopicEnrichmentGenerationError, ValidationError, GenerationProviderError)):
+        asyncio.run(TopicEnrichmentGenerationService(Provider()).generate(topic_card(), retrieval()))
+
+
+def test_generation_requires_review_capability():
+    class Provider:
+        async def generate_topic_enrichment(self, context):
+            return guided_artifact()
+    with pytest.raises(TopicEnrichmentGenerationError, match="review support"):
+        asyncio.run(TopicEnrichmentGenerationService(Provider()).generate(topic_card(), retrieval()))

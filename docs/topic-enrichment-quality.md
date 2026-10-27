@@ -37,3 +37,36 @@ necessary; structural validation is not semantic certification.
 Validation: 122 tests passed, with one existing Pydantic serialization warning
 in test_generation.py; git diff --check passed. A pre-existing saved candidate
 also loaded successfully with its original hash unchanged.
+
+## Semantic review and expanded retrieval (2026-10-27)
+
+New enrichment generation searches the topic title and up to three distinct
+key concepts within the SAME linked-source, subject, grade and level scope.
+It requests 2400-character excerpts instead of the default 520; other search
+callers retain the default. Requests are bounded to four searches of eight
+hits each, duplicates are removed, and the existing relevance filter still
+selects at most six excerpts. This improves access to existing explanations;
+it does not add books or prove that the stored corpus contains them.
+
+After structural validation, a separate structured model call reviews source
+sufficiency, factual grounding, completeness of every expected answer and
+alignment of its criteria. Every activity must be reviewed exactly once.
+Any issue, negative verdict, missing review capability or malformed report
+blocks the new candidate. No automatic repair loop or database apply occurs.
+A model review is fallible and is not expert certification: accepted candidates
+still require manual review. Generation now costs one additional model call.
+
+Existing saved candidates and their hashes are unchanged. Applying a legacy
+candidate does not retroactively run this gate; review it before explicitly
+applying it. This gate protects newly generated enrichment candidates only.
+
+Live check: the topic "Первобытное общество" has only one linked source,
+the federal history programme (236 stored chunks). Expanded search returned
+17 unique hits; six selected excerpts contained 1858–2302 characters each.
+The new real draft was blocked for insufficient evidence and an extra
+criterion not requested by the task. Reviewing the saved f89c2d01... draft
+also detected the missing example for subsistence economy in activity 0.
+Neither check applied catalogue changes. Add suitable explanatory source
+material before expecting this topic to pass the grounding gate.
+
+Validation: 137 tests passed; one pre-existing Pydantic warning remains.

@@ -9,6 +9,7 @@ from typing import Any, Protocol
 import pymorphy3
 
 from app.schemas.generation import TopicEnrichmentArtifact
+from app.schemas.topic_enrichment_review import TopicEnrichmentReview
 from app.services.generation_context import GroundedContextBuilder
 
 
@@ -18,6 +19,9 @@ class TopicEnrichmentGenerationError(RuntimeError):
 
 class TopicEnrichmentProvider(Protocol):
     async def generate_topic_enrichment(self, context: dict) -> dict:
+        ...
+
+    async def review_topic_enrichment(self, context: dict, artifact: dict) -> dict:
         ...
 
 
@@ -465,4 +469,30 @@ class TopicEnrichmentGenerationService:
         artifact = TopicEnrichmentArtifact.model_validate(raw)
         _validate_generated_artifact(artifact, context)
 
+        reviewer = getattr(self.provider, "review_topic_enrichment", None)
+        if not callable(reviewer):
+            raise TopicEnrichmentGenerationError("Provider requires semantic review support.")
+        review = TopicEnrichmentReview.model_validate(
+            await reviewer(context, artifact.model_dump(mode="json"))
+        )
+        validate_semantic_review(review, len(artifact.suitable_activities))
         return artifact
+
+
+def validate_semantic_review(review: TopicEnrichmentReview, activity_count: int) -> None:
+    indexes = [item.activity_index for item in review.activities]
+    if sorted(indexes) != list(range(activity_count)):
+        raise TopicEnrichmentGenerationError("Semantic review must cover every activity exactly once.")
+    issues = list(review.issues)
+    if not review.evidence_sufficient:
+        issues.append("Insufficient explanatory evidence.")
+    if not review.claims_grounded:
+        issues.append("Unsupported factual claims.")
+    for item in review.activities:
+        issues.extend(f"Activity {item.activity_index}: {issue}" for issue in item.issues)
+        if not item.answer_complete:
+            issues.append(f"Activity {item.activity_index}: incomplete expected answer.")
+        if not item.criteria_aligned:
+            issues.append(f"Activity {item.activity_index}: criteria do not match the task.")
+    if issues:
+        raise TopicEnrichmentGenerationError("Semantic review rejected draft: " + "; ".join(issues))

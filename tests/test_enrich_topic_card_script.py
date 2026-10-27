@@ -178,6 +178,12 @@ def test_generate_mode_saves_candidate_without_applying(
             }
 
     class FakeProvider:
+        async def review_topic_enrichment(self, context, artifact):
+            return {"evidence_sufficient": True, "claims_grounded": True, "issues": [],
+                    "activities": [{"activity_index": i, "answer_complete": True,
+                                    "criteria_aligned": True, "issues": []}
+                                   for i, _ in enumerate(artifact["suitable_activities"])]}
+
         async def generate_topic_enrichment(self, context):
             return {
                 "content_summary": "Generated summary",

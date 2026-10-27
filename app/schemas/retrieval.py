@@ -23,6 +23,7 @@ class RetrievalRequest(BaseModel):
     exact_phrase: str | None = None
     top_k: int = Field(default=8, ge=1, le=50)
     candidate_k: int = Field(default=40, ge=5, le=200)
+    snippet_chars: int = Field(default=520, ge=200, le=4000)
 
     @model_validator(mode="after")
     def validate_scope(self):
