@@ -1,3 +1,4 @@
+import uuid
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -11,6 +12,8 @@ class NaturalWorkflowRequest(BaseModel):
     allow_web_fallback: bool = True
     default_formats: list[Literal["docx", "pdf"]] = Field(default_factory=list)
     client_context: dict = Field(default_factory=dict)
+    source_key: str | None = Field(default=None, max_length=200)
+    class_course_id: uuid.UUID | None = None
 
 
 class ParsedArtifact(BaseModel):

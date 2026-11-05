@@ -3,7 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-
 ArtifactType = Literal["lesson", "assessment", "worksheet", "homework", "idea_enhancement", "informational"]
 Audience = Literal["teacher", "student", "both"]
 GenerationMode = Literal["practical", "full", "formal", "emergency"]
@@ -169,6 +168,7 @@ class InformationalArtifact(BaseModel):
 class PedagogyGenerationRequest(BaseModel):
     artifact_type: ArtifactType
     request_text: str = Field(default="", max_length=12000)
+    course_context: dict | None = None  # Trusted server-side course memory only
     subject: str | None = None
     grade: int | None = Field(default=None, ge=1, le=11)
     level: str | None = None

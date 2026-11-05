@@ -5,10 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entities import (
     ClassCourse,
+    ClassGroup,
+    Course,
     CurriculumProgress,
     Homework,
     Lesson,
     LessonStatus,
+    Source,
 )
 
 
@@ -17,9 +20,16 @@ class MemoryService:
         self, session: AsyncSession, class_course_id: uuid.UUID
     ) -> dict:
         course_row = await session.execute(
-            select(ClassCourse).where(ClassCourse.id == class_course_id)
+            select(ClassCourse, ClassGroup, Course, Source)
+            .join(ClassGroup, ClassCourse.class_id == ClassGroup.id)
+            .join(Course, ClassCourse.course_id == Course.id)
+            .outerjoin(Source, ClassCourse.primary_source_id == Source.id)
+            .where(ClassCourse.id == class_course_id)
         )
-        class_course = course_row.scalar_one()
+        course_record = course_row.one_or_none()
+        if course_record is None:
+            raise LookupError("Class course not found")
+        class_course, class_group, course, source = course_record
 
         lesson_row = await session.execute(
             select(Lesson)
@@ -55,6 +65,11 @@ class MemoryService:
 
         return {
             "class_course_id": str(class_course.id),
+            "class_label": class_group.name,
+            "grade": class_group.grade,
+            "subject": course.subject,
+            "course_level": course.level,
+            "primary_source_key": source.source_key if source else None,
             "primary_source_id": (
                 str(class_course.primary_source_id)
                 if class_course.primary_source_id

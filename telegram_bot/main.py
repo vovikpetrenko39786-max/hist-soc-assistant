@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from html import escape
 from pathlib import Path
 
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import BaseMiddleware, Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
@@ -15,16 +16,50 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import FSInputFile, Message
 
 from app.core.config import get_settings
-from telegram_bot.api_client import BackendClientError, TeacherAssistantApi
+from app.core.telegram_access import parse_allowed_user_ids
+from telegram_bot.api_client import TeacherAssistantApi
+from telegram_bot.course_selection import (
+    choices_for_user,
+    course_kwargs,
+    get_selected_choice,
+    parse_course_bindings,
+)
 from telegram_bot.keyboards import main_keyboard
 from telegram_bot.modes import BUTTON_PREFIXES
 from telegram_bot.texts import BETA_NOTICE, HELP_TEXT, START_TEXT
 
 settings = get_settings()
+course_bindings = parse_course_bindings(settings.telegram_course_bindings_json)
 router = Router()
 api = TeacherAssistantApi(
     settings.telegram_backend_base_url,
     settings.telegram_request_timeout_seconds,
+    settings.pilot_api_key,
+)
+
+
+class PilotAccessMiddleware(BaseMiddleware):
+    """Only approved users in private chats may run ANY Telegram command."""
+
+    def __init__(self, allowed_ids: frozenset[int]):
+        self.allowed_ids = allowed_ids
+
+    async def __call__(self, handler, event: Message, data: dict):
+        # Group chats would expose generated documents to all group members.
+        if event.chat.type != "private":
+            return None
+        user = event.from_user
+        if user is None or user.id not in self.allowed_ids:
+            await event.answer(
+                "Доступ к боту пока открыт только участникам пилота. "
+                "Обратитесь к администратору проекта."
+            )
+            return None
+        return await handler(event, data)
+
+
+router.message.outer_middleware(
+    PilotAccessMiddleware(parse_allowed_user_ids(settings.telegram_allowed_user_ids))
 )
 
 
@@ -82,7 +117,19 @@ async def process_request(message: Message, state: FSMContext, text: str):
         f"⏳ Готовлю материал…\nID запроса: <code>{request_id}</code>"
     )
     try:
-        result = await api.assistant(text, user_context(message))
+        data = await state.get_data()
+        selected = data.get("course_alias")
+        choice = get_selected_choice(
+            course_bindings, message.from_user.id if message.from_user else None, selected
+        )
+        if selected and choice is None:
+            await status_message.edit_text(
+                "Выбранный курс больше не доступен. Выберите курс заново: /courses"
+            )
+            return
+        result = await api.assistant(
+            text, user_context(message), **course_kwargs(choice)
+        )
         await status_message.edit_text(
             f"✅ Обработка завершена.\nID запроса: <code>{request_id}</code>"
         )
@@ -121,6 +168,41 @@ async def cmd_help(message: Message):
 async def cmd_whoami(message: Message):
     await message.answer(
         f"Telegram user ID: <code>{message.from_user.id if message.from_user else 'unknown'}</code>"
+    )
+
+
+@router.message(Command("courses"))
+async def cmd_courses(message: Message, state: FSMContext):
+    choices = choices_for_user(course_bindings, message.from_user.id if message.from_user else None)
+    if not choices:
+        await message.answer("У вас пока нет настроенных курсов. Обратитесь к владельцу бота.")
+        return
+    data = await state.get_data()
+    active_alias = data.get("course_alias")
+    lines = ["Доступные курсы:"]
+    for alias, course in sorted(choices.items()):
+        selected = " ✓" if active_alias == alias else ""
+        lines.append(f"/course {alias} — {escape(course.label)}{selected}")
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("course"))
+async def cmd_course(message: Message, state: FSMContext):
+    token = (message.text or "").split(maxsplit=1)
+    requested = token[1].strip().casefold() if len(token) == 2 else ""
+    if requested in {"off", "clear", "сброс"}:
+        await state.update_data(course_alias=None)
+        await message.answer("Курс сброшен. Для выбора наберите /courses.")
+        return
+    user_id = message.from_user.id if message.from_user else None
+    course = get_selected_choice(course_bindings, user_id, requested)
+    if course is None:
+        await message.answer("Такой курс вам не назначен. Список: /courses")
+        return
+    await state.update_data(course_alias=course.alias)
+    await message.answer(
+        f"Выбран курс: {escape(course.label)}. Теперь можно написать: "
+        "«Подготовь следующий урок по нашему учебнику»."
     )
 
 

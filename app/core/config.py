@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Production output layer.
     output_storage_dir: str = "data/generated_outputs"
+    output_min_free_mb: int = 64  # Keep spare volume space for textbooks.
     output_template: str = "school_clean"
     output_font_name: str = "Liberation Sans"
     output_keep_intermediate_docx_for_pdf: bool = True
@@ -65,6 +66,7 @@ class Settings(BaseSettings):
     # Pilot / admin.
     pilot_release_label: str = "1.0-beta"
     admin_api_key: str | None = None
+    pilot_api_key: str | None = None  # Required for ALL /api/v1 routes.
 
     # Telegram adapter.
     telegram_bot_token: str | None = None
@@ -72,6 +74,8 @@ class Settings(BaseSettings):
     telegram_request_timeout_seconds: float = 240.0
     telegram_default_formats: str = "docx"
     telegram_admin_ids: str = ""
+    telegram_allowed_user_ids: str = ""  # Empty = no pilot users allowed.
+    telegram_course_bindings_json: str = ""  # Trusted user-scoped course IDs.
     telegram_beta_notice: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

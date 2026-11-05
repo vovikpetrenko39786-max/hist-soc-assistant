@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +13,7 @@ from app.services.natural_language_workflow import NaturalLanguageWorkflowServic
 
 router = APIRouter(prefix="/assistant", tags=["assistant-workflow"])
 service = NaturalLanguageWorkflowService()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/preview", response_model=WorkflowPlan)
@@ -26,4 +29,5 @@ async def run(
     try:
         return await service.run(session, payload)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        logger.exception("Assistant workflow failed")
+        raise HTTPException(status_code=500, detail="Internal generation error") from exc
