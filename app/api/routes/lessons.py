@@ -1,10 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
+from app.core.pilot_auth import authorize_course
 from app.models.entities import Lesson, LessonStatus
 from app.schemas.lessons import LessonComplete, LessonCreate
 
@@ -14,8 +15,10 @@ router = APIRouter(prefix="/lessons", tags=["lessons"])
 @router.post("")
 async def create_lesson(
     payload: LessonCreate,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
+    authorize_course(request, payload.class_course_id)
     lesson = Lesson(
         class_course_id=payload.class_course_id,
         date=payload.date,
@@ -36,12 +39,14 @@ async def create_lesson(
 async def complete_lesson(
     lesson_id: uuid.UUID,
     payload: LessonComplete,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
     row = await session.execute(select(Lesson).where(Lesson.id == lesson_id))
     lesson = row.scalar_one_or_none()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    authorize_course(request, lesson.class_course_id)
 
     lesson.completed_content = payload.completed_content
     lesson.unfinished_content = payload.unfinished_content

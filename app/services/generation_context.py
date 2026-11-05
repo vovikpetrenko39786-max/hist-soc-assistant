@@ -209,6 +209,7 @@ class GroundedContextBuilder:
         context = {
             "artifact_type": request.artifact_type,
             "request_text": request.request_text,
+            "course_context": getattr(request, "course_context", None),
             "audience": request.audience,
             "duration_minutes": request.duration_minutes,
             "mode": request.mode,
