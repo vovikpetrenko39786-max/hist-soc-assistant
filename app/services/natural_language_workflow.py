@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
+import uuid
 from dataclasses import dataclass
 
+from app.models.entities import GenerationRun
 from app.schemas.output import OutputRenderRequest
 from app.schemas.pedagogy import (
     AssessmentSpec,
@@ -459,7 +461,13 @@ class NaturalLanguageWorkflowService:
     def preview(self, request: NaturalWorkflowRequest) -> WorkflowPlan:
         return self.parser.parse(request)
 
-    async def run(self, session, request: NaturalWorkflowRequest) -> dict:
+    async def run(
+        self,
+        session,
+        request: NaturalWorkflowRequest,
+        *,
+        owner_principal: str | None = None,
+    ) -> dict:
         plan = self.parser.parse(request)
         warnings = list(plan.notes)
         results = []
@@ -677,6 +685,19 @@ class NaturalLanguageWorkflowService:
                     "Материал не прошёл проверку качества и не отправлен как готовый файл."
                 )
             run_id = generated.get("run_id")
+            if run_id and session is not None:
+                run = await session.get(GenerationRun, run_id)
+                if run is not None:
+                    request_json = dict(run.request_json or {})
+                    if owner_principal:
+                        request_json["_owner_principal"] = owner_principal
+                    run.request_json = request_json
+                    if course_context:
+                        run.class_course_id = request.class_course_id
+                        teacher_id = course_context.get("teacher_id")
+                        if teacher_id:
+                            run.teacher_id = uuid.UUID(teacher_id)
+                    await session.commit()
             if (
                 request.auto_render
                 and not request.dry_run

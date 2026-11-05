@@ -65,6 +65,7 @@ class MemoryService:
 
         return {
             "class_course_id": str(class_course.id),
+            "teacher_id": str(class_course.teacher_id),
             "class_label": class_group.name,
             "grade": class_group.grade,
             "subject": course.subject,

@@ -11,25 +11,42 @@ from app.schemas.workflow import NaturalWorkflowRequest
 from app.services.natural_language_workflow import NaturalLanguageWorkflowService
 from app.services.output_service import OutputRenderError, OutputService
 
+PILOT_KEY = "pilot-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
+
+
+def fake_request():
+    return SimpleNamespace(state=SimpleNamespace())
+
 
 def test_pilot_access_fails_closed_without_config(monkeypatch):
     monkeypatch.setattr(pilot_auth, "get_settings", lambda: SimpleNamespace(
-        pilot_api_key=None, admin_api_key=None
+        pilot_api_key=None, admin_api_key=None, telegram_allowed_user_ids=""
     ))
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(pilot_auth.require_pilot_access(x_pilot_key=None, x_admin_key=None))
+        asyncio.run(pilot_auth.require_pilot_access(
+            fake_request(), x_pilot_key=None, x_admin_key=None, x_pilot_user_id=None
+        ))
     assert exc.value.status_code == 503
 
 
 def test_pilot_access_requires_valid_token(monkeypatch):
     monkeypatch.setattr(pilot_auth, "get_settings", lambda: SimpleNamespace(
-        pilot_api_key="demo-pilot-secret", admin_api_key="demo-admin-secret"
+        pilot_api_key=PILOT_KEY, admin_api_key="demo-admin-secret",
+        telegram_allowed_user_ids="123",
     ))
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(pilot_auth.require_pilot_access(x_pilot_key="wrong", x_admin_key=None))
+        asyncio.run(pilot_auth.require_pilot_access(
+            fake_request(), x_pilot_key="wrong", x_admin_key=None, x_pilot_user_id="123"
+        ))
     assert exc.value.status_code == 401
-    asyncio.run(pilot_auth.require_pilot_access(x_pilot_key="demo-pilot-secret", x_admin_key=None))
-    asyncio.run(pilot_auth.require_pilot_access(x_pilot_key=None, x_admin_key="demo-admin-secret"))
+    principal = asyncio.run(pilot_auth.require_pilot_access(
+        fake_request(), x_pilot_key=PILOT_KEY, x_admin_key=None, x_pilot_user_id="123"
+    ))
+    assert principal.external_id == "123"
+    assert asyncio.run(pilot_auth.require_pilot_access(
+        fake_request(), x_pilot_key=None, x_admin_key="demo-admin-secret",
+        x_pilot_user_id=None,
+    )).role == "admin"
 
 
 @pytest.mark.asyncio

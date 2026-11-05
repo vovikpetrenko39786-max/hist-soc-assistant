@@ -16,13 +16,19 @@ class TeacherAssistantApi:
         self.timeout = timeout_seconds
         self.headers = {"X-Pilot-Key": api_key} if api_key else {}
 
+    def user_headers(self, user_id: int) -> dict[str, str]:
+        if not isinstance(user_id, int) or user_id <= 0:
+            raise BackendClientError("A valid pilot user ID is required")
+        return {**self.headers, "X-Pilot-User-ID": str(user_id)}
+
     async def health(self) -> dict:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get(f"{self.base_url}/api/v1/pilot/health", headers=self.headers)
+            response = await client.get(f"{self.base_url}/health")
             response.raise_for_status()
             return response.json()
 
     async def assistant(self, message: str, user_context: dict,
+                        user_id: int,
                         class_course_id: str | None = None,
                         source_key: str | None = None) -> dict:
         payload = {
@@ -40,7 +46,7 @@ class TeacherAssistantApi:
             response = await client.post(
                 f"{self.base_url}/api/v1/assistant",
                 json=payload,
-                headers=self.headers,
+                headers=self.user_headers(user_id),
             )
             if response.status_code >= 400:
                 raise BackendClientError(
@@ -48,12 +54,12 @@ class TeacherAssistantApi:
                 )
             return response.json()
 
-    async def feedback(self, payload: dict) -> dict:
+    async def feedback(self, payload: dict, user_id: int) -> dict:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/api/v1/pilot/feedback",
                 json=payload,
-                headers=self.headers,
+                headers=self.user_headers(user_id),
             )
             if response.status_code >= 400:
                 raise BackendClientError(
@@ -61,12 +67,12 @@ class TeacherAssistantApi:
                 )
             return response.json()
 
-    async def download(self, download_path: str, file_name: str) -> Path:
+    async def download(self, download_path: str, file_name: str, user_id: int) -> Path:
         if not download_path.startswith("/api/v1/outputs/files/"):
             raise BackendClientError("Unexpected download path")
         url = f"{self.base_url}{download_path}"
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.get(url, headers=self.headers)
+            response = await client.get(url, headers=self.user_headers(user_id))
             if response.status_code >= 400:
                 raise BackendClientError(
                     f"Download {response.status_code}: {response.text[:500]}"

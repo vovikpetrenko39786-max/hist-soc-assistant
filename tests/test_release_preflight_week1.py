@@ -3,8 +3,8 @@ import pytest
 
 from release_preflight import main, parse_env_file, validate_release_configuration
 
-KEY = "a" * 48
-ADMIN = "b" * 48
+KEY = "pilot-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
+ADMIN = "admin-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
 
 
 def configs():
@@ -13,11 +13,18 @@ def configs():
         "ADMIN_API_KEY": ADMIN,
         "OUTPUT_STORAGE_DIR": "/app/data/source_files/generated_outputs",
         "RAILWAY_VOLUME_MOUNT_PATH": "/app/data/source_files",
+        "TELEGRAM_ALLOWED_USER_IDS": "12345,67890",
+        "TELEGRAM_COURSE_BINDINGS_JSON": "{}",
+        "EXPORT_INVENTORY_CONFIRMED": "true",
+        "EXPORT_BACKUP_CONFIRMED": "true",
+        "OUTPUT_STORAGE_MIGRATION_CONFIRMED": "true",
+        "OUTPUT_LEGACY_STORAGE_ROOTS_JSON": "[]",
     }
     bot = {
         "PILOT_API_KEY": KEY,
         "TELEGRAM_BOT_TOKEN": "test-not-a-live-token",
         "TELEGRAM_ALLOWED_USER_IDS": "12345,67890",
+        "TELEGRAM_COURSE_BINDINGS_JSON": "{}",
     }
     return api, bot
 
@@ -44,7 +51,7 @@ def test_short_pilot_token_rejected():
 
 def test_different_pilot_tokens_rejected_without_leakage():
     api, bot = configs()
-    bot["PILOT_API_KEY"] = "d" * 48
+    bot["PILOT_API_KEY"] = "different-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-xyz"
     findings = validate_release_configuration(api, bot)
     assert "PILOT_API_KEY_MISMATCH" in [f.code for f in findings]
     assert KEY not in repr(findings)
@@ -61,6 +68,24 @@ def test_invalid_telegram_allowlist_rejected():
     api, bot = configs()
     bot["TELEGRAM_ALLOWED_USER_IDS"] = "123, -42"
     assert "TELEGRAM_ALLOWLIST_INVALID" in errors(api, bot)
+
+
+def test_backend_and_bot_allowlists_must_match():
+    api, bot = configs()
+    api["TELEGRAM_ALLOWED_USER_IDS"] = "12345"
+    assert "ALLOWLIST_MISMATCH" in errors(api, bot)
+
+
+def test_backend_and_bot_course_bindings_must_match():
+    api, bot = configs()
+    bot["TELEGRAM_COURSE_BINDINGS_JSON"] = '{"12345":{}}'
+    assert "COURSE_BINDINGS_MISMATCH" in errors(api, bot)
+
+
+def test_backup_confirmations_are_release_blockers():
+    api, bot = configs()
+    api["EXPORT_BACKUP_CONFIRMED"] = "false"
+    assert "EXPORT_BACKUP_CONFIRMED" in errors(api, bot)
 
 
 def test_default_ephemeral_output_path_is_rejected():
@@ -91,6 +116,12 @@ def test_path_traversal_outside_volume_rejected():
     api, bot = configs()
     api["OUTPUT_STORAGE_DIR"] = "data/source_files/../../unsafe"
     assert "OUTPUT_EPHEMERAL" in errors(api, bot)
+
+
+def test_legacy_output_roots_cannot_escape_volume():
+    api, bot = configs()
+    api["OUTPUT_LEGACY_STORAGE_ROOTS_JSON"] = '["/tmp/old-exports"]'
+    assert "LEGACY_OUTPUT_ROOTS_UNSAFE" in errors(api, bot)
 
 
 def test_duplicate_env_keys_rejected(tmp_path):

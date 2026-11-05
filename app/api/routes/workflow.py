@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
+from app.core.pilot_auth import authorize_course, require_user_principal
 from app.schemas.workflow import (
     NaturalWorkflowRequest,
     NaturalWorkflowResponse,
@@ -24,10 +25,20 @@ async def preview(payload: NaturalWorkflowRequest):
 @router.post("", response_model=NaturalWorkflowResponse)
 async def run(
     payload: NaturalWorkflowRequest,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return await service.run(session, payload)
+        principal = require_user_principal(request)
+        if payload.class_course_id:
+            authorize_course(request, payload.class_course_id)
+        return await service.run(
+            session,
+            payload,
+            owner_principal=(
+                f"telegram:{principal.external_id}" if principal.external_id else "admin"
+            ),
+        )
     except Exception as exc:
         logger.exception("Assistant workflow failed")
         raise HTTPException(status_code=500, detail="Internal generation error") from exc

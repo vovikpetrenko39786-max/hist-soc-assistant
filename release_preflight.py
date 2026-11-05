@@ -6,6 +6,7 @@ reads two caller-supplied env snapshots. Do not commit env snapshots to Git!
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -66,10 +67,17 @@ def validate_release_configuration(
 
     api_key = api.get("PILOT_API_KEY", "")
     bot_key = bot.get("PILOT_API_KEY", "")
+    def strong_key(value: str) -> bool:
+        return (
+            len(value) >= 43
+            and not any(character.isspace() for character in value)
+            and len(set(value)) >= 12
+        )
+
     if not api_key or not bot_key:
         add("PILOT_API_KEY_MISSING", "ERROR", "Shared API access key must be set in both services.")
-    elif len(api_key) < 32 or len(bot_key) < 32:
-        add("PILOT_API_KEY_WEAK", "ERROR", "Shared API access key must be at least 32 characters.")
+    elif not strong_key(api_key) or not strong_key(bot_key):
+        add("PILOT_API_KEY_WEAK", "ERROR", "Shared API access key must be a generated high-entropy token of at least 43 characters.")
     elif api_key != bot_key:
         add("PILOT_API_KEY_MISMATCH", "ERROR", "Backend and bot have different shared API access keys.")
     else:
@@ -87,6 +95,29 @@ def validate_release_configuration(
         add("TELEGRAM_ALLOWLIST_INVALID", "ERROR", "Telegram allowlist has an invalid user ID.")
     else:
         add("TELEGRAM_ALLOWLIST", "INFO", "Telegram allowlist has authorized user IDs.")
+        api_allowlist = api.get("TELEGRAM_ALLOWED_USER_IDS", "").strip()
+        api_tokens = re.split(r"[,;\s]+", api_allowlist) if api_allowlist else []
+        if not api_tokens:
+            add("BACKEND_ALLOWLIST_MISSING", "ERROR", "Backend Telegram allowlist is missing.")
+        elif set(api_tokens) != set(allowed_tokens):
+            add("ALLOWLIST_MISMATCH", "ERROR", "Backend and bot Telegram allowlists differ.")
+        else:
+            add("ALLOWLIST_MATCH", "INFO", "Backend and bot Telegram allowlists match.")
+
+    api_bindings = api.get("TELEGRAM_COURSE_BINDINGS_JSON", "").strip()
+    bot_bindings = bot.get("TELEGRAM_COURSE_BINDINGS_JSON", "").strip()
+    try:
+        parsed_api_bindings = json.loads(api_bindings) if api_bindings else {}
+        parsed_bot_bindings = json.loads(bot_bindings) if bot_bindings else {}
+    except (TypeError, ValueError):
+        add("COURSE_BINDINGS_INVALID", "ERROR", "Course bindings are not valid JSON.")
+    else:
+        if parsed_api_bindings != parsed_bot_bindings:
+            add("COURSE_BINDINGS_MISMATCH", "ERROR", "Backend and bot course bindings differ.")
+        elif parsed_api_bindings:
+            add("COURSE_BINDINGS_MATCH", "INFO", "Backend and bot course bindings match.")
+        else:
+            add("COURSE_BINDINGS_EMPTY", "WARNING", "No user-scoped courses are configured.")
 
     raw_dir = api.get("OUTPUT_STORAGE_DIR", "data/generated_outputs").strip()
     raw_mount = api.get("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
@@ -103,6 +134,24 @@ def validate_release_configuration(
             add("OUTPUT_PERSISTENT", "INFO", "Output directory is inside a mounted Railway volume.")
             if output == mount:
                 add("OUTPUT_MOUNT_ROOT", "WARNING", "Prefer a dedicated subdirectory for generated exports.")
+            legacy_raw = api.get("OUTPUT_LEGACY_STORAGE_ROOTS_JSON", "[]")
+            try:
+                legacy_roots = json.loads(legacy_raw)
+            except (TypeError, ValueError):
+                add("LEGACY_OUTPUT_ROOTS_INVALID", "ERROR", "Legacy output roots are not valid JSON.")
+            else:
+                if not isinstance(legacy_roots, list) or len(legacy_roots) > 8:
+                    add("LEGACY_OUTPUT_ROOTS_INVALID", "ERROR", "Legacy output roots must be a short JSON list.")
+                elif any(
+                    not isinstance(item, str)
+                    or not Path(item).is_absolute()
+                    or Path(item).resolve() == Path("/")
+                    or not Path(item).resolve().is_relative_to(mount)
+                    for item in legacy_roots
+                ):
+                    add("LEGACY_OUTPUT_ROOTS_UNSAFE", "ERROR", "Legacy output roots must stay inside the declared volume.")
+                elif legacy_roots:
+                    add("LEGACY_OUTPUT_ROOTS", "INFO", "Legacy output roots are explicitly read-only and volume-scoped.")
 
     admin_key = api.get("ADMIN_API_KEY", "")
     if not admin_key or len(admin_key) < 32:
@@ -110,6 +159,14 @@ def validate_release_configuration(
     elif admin_key == api_key and api_key:
         add("ADMIN_PILOT_KEY_REUSED", "WARNING", "Administrator and pilot API keys should be different.")
 
+    confirmations = {
+        "EXPORT_INVENTORY_CONFIRMED": "Read-only legacy export inventory has not been confirmed.",
+        "EXPORT_BACKUP_CONFIRMED": "A restorable database and file backup has not been confirmed.",
+        "OUTPUT_STORAGE_MIGRATION_CONFIRMED": "The output storage migration plan has not been confirmed.",
+    }
+    for name, message in confirmations.items():
+        if api.get(name, "").strip().casefold() != "true":
+            add(name, "ERROR", message)
     add("EXPORT_MIGRATION", "WARNING", "Check existing exported_files.file_path records before changing OUTPUT_STORAGE_DIR; old files are not migrated automatically.")
     add("NO_DEPLOY_APPROVAL", "WARNING", "Passing this check does not replace full pytest, database backup, tenant security review or end-to-end tests.")
     return findings

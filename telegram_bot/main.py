@@ -17,7 +17,7 @@ from aiogram.types import FSInputFile, Message
 
 from app.core.config import get_settings
 from app.core.telegram_access import parse_allowed_user_ids
-from telegram_bot.api_client import TeacherAssistantApi
+from telegram_bot.api_client import BackendClientError, TeacherAssistantApi
 from telegram_bot.course_selection import (
     choices_for_user,
     course_kwargs,
@@ -96,7 +96,11 @@ async def send_workflow_result(message: Message, result: dict, state: FSMContext
         for file in item.get("files", []):
             path = None
             try:
-                path = await api.download(file["download_path"], file["file_name"])
+                if message.from_user is None:
+                    raise BackendClientError("Telegram user identity is unavailable")
+                path = await api.download(
+                    file["download_path"], file["file_name"], message.from_user.id
+                )
                 label = "👩‍🏫 Для учителя" if file.get("audience") == "teacher" else "👨‍🎓 Для ученика"
                 await message.answer_document(
                     FSInputFile(path, filename=file["file_name"]),
@@ -128,7 +132,10 @@ async def process_request(message: Message, state: FSMContext, text: str):
             )
             return
         result = await api.assistant(
-            text, user_context(message), **course_kwargs(choice)
+            text,
+            user_context(message),
+            message.from_user.id if message.from_user else 0,
+            **course_kwargs(choice),
         )
         await status_message.edit_text(
             f"✅ Обработка завершена.\nID запроса: <code>{request_id}</code>"
@@ -257,7 +264,9 @@ async def save_feedback(message: Message, state: FSMContext):
         },
     }
     try:
-        response = await api.feedback(payload)
+        if message.from_user is None:
+            raise BackendClientError("Telegram user identity is unavailable")
+        response = await api.feedback(payload, message.from_user.id)
         await message.answer(
             f"💬 Спасибо! Отзыв сохранён.\nID: <code>{response.get('id')}</code>",
             reply_markup=main_keyboard(),

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 
@@ -11,6 +12,27 @@ class ExportIntegrityError(Exception):
     def __init__(self, reason: str):
         super().__init__(reason)
         self.reason = reason
+
+
+def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> list[Path]:
+    """Return explicit read roots without broadening writes to legacy storage."""
+    try:
+        legacy = json.loads(legacy_roots_json or "[]")
+    except (TypeError, ValueError) as exc:
+        raise ExportIntegrityError("invalid_roots") from exc
+    if not isinstance(legacy, list) or len(legacy) > 8 or not all(
+        isinstance(item, str) and item.strip() for item in legacy
+    ):
+        raise ExportIntegrityError("invalid_roots")
+    roots = [Path(current_root).resolve()]
+    for item in legacy:
+        root = Path(item)
+        if not root.is_absolute() or root == Path("/"):
+            raise ExportIntegrityError("invalid_roots")
+        resolved = root.resolve()
+        if resolved not in roots:
+            roots.append(resolved)
+    return roots
 
 
 def verified_export_path(
@@ -35,3 +57,20 @@ def verified_export_path(
     if h.hexdigest() != expected_sha256:
         raise ExportIntegrityError("corrupt")
     return path
+
+
+def verified_export_path_in_roots(
+    recorded_path: str,
+    roots: list[Path],
+    expected_size: int,
+    expected_sha256: str,
+) -> Path:
+    for root in roots:
+        try:
+            return verified_export_path(
+                recorded_path, str(root), expected_size, expected_sha256
+            )
+        except ExportIntegrityError as exc:
+            if exc.reason != "outside_root":
+                raise
+    raise ExportIntegrityError("outside_root")

@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Production output layer.
     output_storage_dir: str = "data/generated_outputs"
+    output_legacy_storage_roots_json: str = "[]"  # Read-only roots after verified migration.
     output_min_free_mb: int = 64  # Keep spare volume space for textbooks.
     output_template: str = "school_clean"
     output_font_name: str = "Liberation Sans"

@@ -3,7 +3,12 @@ from hashlib import sha256
 
 import pytest
 
-from app.services.export_integrity import ExportIntegrityError, verified_export_path
+from app.services.export_integrity import (
+    ExportIntegrityError,
+    storage_roots,
+    verified_export_path,
+    verified_export_path_in_roots,
+)
 
 
 def test_valid_export(tmp_path):
@@ -50,3 +55,22 @@ def test_changed_bytes_of_same_size_are_rejected(tmp_path):
     file.write_bytes(b"changed!")
     with pytest.raises(ExportIntegrityError, match="corrupt"):
         verified_export_path(str(file), str(tmp_path), 8, sha256(b"original").hexdigest())
+
+
+def test_verified_legacy_root_preserves_old_document(tmp_path):
+    current = tmp_path / "current"
+    legacy = tmp_path / "legacy"
+    current.mkdir()
+    legacy.mkdir()
+    file = legacy / "old.docx"
+    file.write_bytes(b"old-but-valid")
+    roots = storage_roots(str(current), f'["{legacy}"]')
+    assert verified_export_path_in_roots(
+        str(file), roots, len(b"old-but-valid"), sha256(b"old-but-valid").hexdigest()
+    ) == file
+
+
+@pytest.mark.parametrize("raw", ['"/tmp"', '["relative"]', '["/"]'])
+def test_unsafe_legacy_root_configuration_is_rejected(tmp_path, raw):
+    with pytest.raises(ExportIntegrityError, match="invalid_roots"):
+        storage_roots(str(tmp_path), raw)
