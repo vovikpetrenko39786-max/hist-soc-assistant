@@ -12,6 +12,7 @@ from app.services.natural_language_workflow import NaturalLanguageWorkflowServic
 from app.services.output_service import OutputRenderError, OutputService
 
 PILOT_KEY = "pilot-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
+ADMIN_KEY = "admin-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
 
 
 def fake_request():
@@ -31,7 +32,7 @@ def test_pilot_access_fails_closed_without_config(monkeypatch):
 
 def test_pilot_access_requires_valid_token(monkeypatch):
     monkeypatch.setattr(pilot_auth, "get_settings", lambda: SimpleNamespace(
-        pilot_api_key=PILOT_KEY, admin_api_key="demo-admin-secret",
+        pilot_api_key=PILOT_KEY, admin_api_key=ADMIN_KEY,
         telegram_allowed_user_ids="123",
     ))
     with pytest.raises(HTTPException) as exc:
@@ -44,7 +45,7 @@ def test_pilot_access_requires_valid_token(monkeypatch):
     ))
     assert principal.external_id == "123"
     assert asyncio.run(pilot_auth.require_pilot_access(
-        fake_request(), x_pilot_key=None, x_admin_key="demo-admin-secret",
+        fake_request(), x_pilot_key=None, x_admin_key=ADMIN_KEY,
         x_pilot_user_id=None,
     )).role == "admin"
 
@@ -76,3 +77,29 @@ async def test_output_service_rejects_failed_generation():
     request = SimpleNamespace(generation_run_id="test", audience="teacher")
     with pytest.raises(OutputRenderError, match="not passed quality"):
         await service.render(fake_session, request)
+
+
+def test_weak_admin_key_cannot_bypass_scoped_pilot_auth(monkeypatch):
+    """A short admin password must never unlock unrestricted API access."""
+    monkeypatch.setattr(pilot_auth, "get_settings", lambda: SimpleNamespace(
+        pilot_api_key=PILOT_KEY, admin_api_key="demo-admin-secret",
+        telegram_allowed_user_ids="123",
+    ))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(pilot_auth.require_pilot_access(
+            fake_request(), x_pilot_key=None, x_admin_key="demo-admin-secret",
+            x_pilot_user_id=None,
+        ))
+    assert exc.value.status_code == 401
+
+
+def test_strong_admin_key_still_allows_admin_without_pilot_headers(monkeypatch):
+    monkeypatch.setattr(pilot_auth, "get_settings", lambda: SimpleNamespace(
+        pilot_api_key=None, admin_api_key=ADMIN_KEY,
+        telegram_allowed_user_ids="",
+    ))
+    principal = asyncio.run(pilot_auth.require_pilot_access(
+        fake_request(), x_pilot_key=None, x_admin_key=ADMIN_KEY,
+        x_pilot_user_id=None,
+    ))
+    assert principal.role == "admin"
