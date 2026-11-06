@@ -102,7 +102,7 @@ async def require_pilot_access(
 ) -> PilotPrincipal:
     settings = get_settings()
     if (
-        settings.admin_api_key
+        is_strong_shared_key(settings.admin_api_key)
         and x_admin_key
         and secrets.compare_digest(x_admin_key, settings.admin_api_key)
     ):
