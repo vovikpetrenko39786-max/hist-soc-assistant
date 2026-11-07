@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.core.config import get_settings
+from app.core.pilot_auth import is_strong_shared_key
 from app.models.entities import Source
 from app.services.embeddings import EmbeddingError, EmbeddingService
 from app.services.source_ingestion import SourceIngestionError, SourceIngestionService
@@ -19,8 +20,8 @@ embeddings = EmbeddingService()
 
 
 def _admin(key: str | None):
-    if not settings.admin_api_key:
-        raise HTTPException(status_code=503, detail="ADMIN_API_KEY is not configured")
+    if not is_strong_shared_key(settings.admin_api_key):
+        raise HTTPException(status_code=503, detail="Strong ADMIN_API_KEY is not configured")
     if not key or not secrets.compare_digest(key, settings.admin_api_key):
         raise HTTPException(status_code=401, detail="Invalid admin key")
 
