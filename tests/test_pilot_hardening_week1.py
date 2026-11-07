@@ -103,3 +103,33 @@ def test_strong_admin_key_still_allows_admin_without_pilot_headers(monkeypatch):
         x_pilot_user_id=None,
     ))
     assert principal.role == "admin"
+
+
+@pytest.mark.parametrize("module_name,guard_name", [
+    ("app.api.routes.admin_library", "_admin"),
+    ("app.api.routes.pilot", "_require_admin"),
+])
+def test_legacy_admin_routes_reject_weak_config(monkeypatch, module_name, guard_name):
+    """Legacy admin endpoints must not bypass the shared admin-key strength guard."""
+    import importlib
+
+    module = importlib.import_module(module_name)
+    monkeypatch.setattr(module, "settings", SimpleNamespace(admin_api_key="demo-admin-secret"))
+    with pytest.raises(HTTPException) as exc:
+        getattr(module, guard_name)("demo-admin-secret")
+    assert exc.value.status_code == 503
+
+
+@pytest.mark.parametrize("module_name,guard_name", [
+    ("app.api.routes.admin_library", "_admin"),
+    ("app.api.routes.pilot", "_require_admin"),
+])
+def test_legacy_admin_routes_require_correct_strong_key(monkeypatch, module_name, guard_name):
+    import importlib
+
+    module = importlib.import_module(module_name)
+    monkeypatch.setattr(module, "settings", SimpleNamespace(admin_api_key=ADMIN_KEY))
+    with pytest.raises(HTTPException) as exc:
+        getattr(module, guard_name)("incorrect-key")
+    assert exc.value.status_code == 401
+    assert getattr(module, guard_name)(ADMIN_KEY) is None

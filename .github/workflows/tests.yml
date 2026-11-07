@@ -2,9 +2,9 @@ name: Hist-Soc Assistant checks
 
 on:
   push:
-    branches: [main, fix/strong-admin-key-2026-11-06]
+    branches: [main, fix/strong-admin-key-2026-11-06, fix/admin-route-strong-key-2026-11-07]
   pull_request:
-    branches: [main]
+    branches: [main, fix/strong-admin-key-2026-11-06]
   workflow_dispatch:
 
 permissions:

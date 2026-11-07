@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.core.config import get_settings
+from app.core.pilot_auth import is_strong_shared_key
 from app.models.entities import ExportedFile, GenerationRun, PilotFeedback
 from app.schemas.pilot import PilotFeedbackCreate
 
@@ -15,8 +16,8 @@ settings = get_settings()
 
 
 def _require_admin(x_admin_key: str | None):
-    if not settings.admin_api_key:
-        raise HTTPException(status_code=503, detail="ADMIN_API_KEY is not configured")
+    if not is_strong_shared_key(settings.admin_api_key):
+        raise HTTPException(status_code=503, detail="Strong ADMIN_API_KEY is not configured")
     if not x_admin_key or not secrets.compare_digest(x_admin_key, settings.admin_api_key):
         raise HTTPException(status_code=401, detail="Invalid admin key")
 
