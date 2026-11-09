@@ -1,4 +1,4 @@
-"""Check an exported file's identity before serving it."""
+"""Fail closed when a stored export cannot be safely served."""
 from __future__ import annotations
 
 import hashlib
@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 
-class ExportIntegrityError(Exception):
-    """Reason is one of: outside_root, missing, corrupt."""
+class ExportIntegrityError(ValueError):
+    """An export is missing, unsafe, or differs from its recorded metadata."""
 
     def __init__(self, reason: str):
         super().__init__(reason)
@@ -24,6 +24,7 @@ def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> li
         isinstance(item, str) and item.strip() for item in legacy
     ):
         raise ExportIntegrityError("invalid_roots")
+
     roots = [Path(current_root).resolve()]
     for item in legacy:
         root = Path(item)
@@ -37,24 +38,44 @@ def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> li
 
 def verified_export_path(
     recorded_path: str,
-    storage_root: str,
-    expected_size: int,
-    expected_sha256: str,
+    storage_root: str | None = None,
+    expected_size: int | None = None,
+    expected_sha256: str | None = None,
+    *,
+    storage_dir: str | None = None,
+    file_format: str | None = None,
 ) -> Path:
-    """Accept only unchanged regular files inside the configured export root."""
-    root = Path(storage_root).resolve()
+    """Resolve a persisted export inside storage and verify its format and bytes."""
+    root_value = storage_dir if storage_dir is not None else storage_root
+    if not root_value:
+        raise ExportIntegrityError("invalid_root")
+    if storage_dir is not None and storage_root is not None:
+        raise ExportIntegrityError("invalid_root")
+    if file_format is not None and file_format not in {"docx", "pdf"}:
+        raise ExportIntegrityError("unsupported_format")
+
+    root = Path(root_value).resolve()
     path = Path(recorded_path).resolve()
-    if not path.is_relative_to(root):
+    if path == root or not path.is_relative_to(root):
         raise ExportIntegrityError("outside_root")
+    if file_format is not None and path.suffix.lower() != f".{file_format}":
+        raise ExportIntegrityError("format_mismatch")
     if not path.is_file():
         raise ExportIntegrityError("missing")
-    if path.stat().st_size != expected_size:
+    if expected_size is None or path.stat().st_size != expected_size:
         raise ExportIntegrityError("corrupt")
-    h = hashlib.sha256()
+    if (
+        not isinstance(expected_sha256, str)
+        or len(expected_sha256) != 64
+        or any(character not in "0123456789abcdefABCDEF" for character in expected_sha256)
+    ):
+        raise ExportIntegrityError("corrupt")
+
+    digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
-            h.update(block)
-    if h.hexdigest() != expected_sha256:
+            digest.update(block)
+    if digest.hexdigest() != expected_sha256.lower():
         raise ExportIntegrityError("corrupt")
     return path
 
@@ -62,13 +83,20 @@ def verified_export_path(
 def verified_export_path_in_roots(
     recorded_path: str,
     roots: list[Path],
-    expected_size: int,
-    expected_sha256: str,
+    expected_size: int | None,
+    expected_sha256: str | None,
+    *,
+    file_format: str | None = None,
 ) -> Path:
+    """Verify an export against the current root and explicitly allowed legacy roots."""
     for root in roots:
         try:
             return verified_export_path(
-                recorded_path, str(root), expected_size, expected_sha256
+                recorded_path,
+                str(root),
+                expected_size,
+                expected_sha256,
+                file_format=file_format,
             )
         except ExportIntegrityError as exc:
             if exc.reason != "outside_root":
