@@ -78,8 +78,14 @@ async def download_output(
             ),
             item.size_bytes,
             item.sha256,
+            file_format=item.file_format,
         )
-    except ExportIntegrityError as exc:
+    except (ExportIntegrityError, OSError) as exc:
+        if isinstance(exc, OSError):
+            raise HTTPException(
+                status_code=410,
+                detail="Export file is unavailable or corrupted",
+            ) from exc
         if exc.reason == "invalid_roots":
             raise HTTPException(status_code=503, detail="Export storage is misconfigured") from exc
         if exc.reason == "outside_root":
