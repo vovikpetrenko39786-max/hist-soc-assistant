@@ -1,13 +1,14 @@
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
+from app.core.config import get_settings
 from app.schemas.output import OutputRenderRequest, OutputRenderResponse
 from app.services.output_service import OutputRenderError, OutputService
+from app.services.export_integrity import ExportIntegrityError, verified_export_path
 from app.services.output_templates import OutputTemplateRegistry
 
 router = APIRouter(prefix="/outputs", tags=["outputs"])
@@ -38,9 +39,16 @@ async def download_output(
     item = await service.get_export(session, export_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Export not found")
-    path = Path(item.file_path)
-    if not path.exists():
-        raise HTTPException(status_code=410, detail="Export file is missing from storage")
+    try:
+        path = verified_export_path(
+            item.file_path,
+            storage_dir=get_settings().output_storage_dir,
+            file_format=item.file_format,
+            expected_size=item.size_bytes,
+            expected_sha256=item.sha256,
+        )
+    except (ExportIntegrityError, OSError) as exc:
+        raise HTTPException(status_code=410, detail="Export file is unavailable or corrupted") from exc
     media = (
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         if item.file_format == "docx"
