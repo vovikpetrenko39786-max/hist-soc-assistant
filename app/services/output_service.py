@@ -62,8 +62,11 @@ class OutputService:
         audience_suffix = "teacher" if request.audience == "teacher" else "student"
         stem = f"{_slug(base)}_{audience_suffix}"
 
+        # Every render gets its own directory: re-rendering the same lesson or
+        # inline title must not overwrite files referenced by earlier exports.
         run_part = str(run.id) if run else "inline"
-        out_dir = Path(settings.output_storage_dir) / run_part
+        render_id = uuid.uuid4().hex
+        out_dir = Path(settings.output_storage_dir) / run_part / render_id
         out_dir.mkdir(parents=True, exist_ok=True)
 
         renderer = DocxArtifactRenderer(template)
