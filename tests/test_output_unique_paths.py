@@ -1,9 +1,9 @@
 """Regression tests: exporting the same title must never replace an earlier export."""
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
 
 import pytest
+import uuid
 
 from app.services import output_service
 
@@ -19,6 +19,9 @@ class FakeSession:
 
     async def flush(self):
         self.flush_count += 1
+        for row in self.rows:
+            if row.id is None:
+                row.id = uuid.uuid4()
 
     async def commit(self):
         self.commit_count += 1
@@ -48,7 +51,7 @@ async def test_repeated_render_preserves_prior_export(tmp_path, monkeypatch, run
     monkeypatch.setattr(output_service.DocxArtifactRenderer, "render", write_docx)
 
     session = FakeSession()
-    run_id = __import__("uuid").uuid4()
+    run_id = uuid.uuid4()
     run = SimpleNamespace(
         id=run_id,
         task_type="lesson",
