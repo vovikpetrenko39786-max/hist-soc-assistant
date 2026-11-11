@@ -1,23 +1,25 @@
-name: Hist-Soc Assistant checks
+name: Hist-Soc regression checks
 
 on:
   push:
-    branches: [main, fix/strong-admin-key-2026-11-06, fix/admin-route-strong-key-2026-11-07]
+    branches:
+      - main
+      - 'fix/**'
+      - 'integration/**'
   pull_request:
-    branches: [main, fix/strong-admin-key-2026-11-06]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: hist-soc-ci-${{ github.workflow }}-${{ github.ref }}
+  group: hist-soc-tests-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       APP_ENV: test
       AUTO_CREATE_TABLES: "false"
@@ -40,20 +42,20 @@ jobs:
           --health-timeout 5s
           --health-retries 8
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
-      - name: Install dependencies
+      - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e '.[dev]'
-      - name: Compile Python sources
+      - name: Compile Python
         run: python -m compileall -q app telegram_bot tests
-      - name: Run regression suite
+      - name: Regression suite
         run: python -m pytest -q
       - name: Verify schema on isolated PostgreSQL + pgvector
         run: python scripts/ci_db_schema_smoke.py
