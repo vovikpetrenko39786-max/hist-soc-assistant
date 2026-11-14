@@ -1,8 +1,6 @@
 from __future__ import annotations
 import json
 
-import uuid
-
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 

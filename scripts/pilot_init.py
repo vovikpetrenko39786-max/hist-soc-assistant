@@ -3,7 +3,6 @@
 Run after the database is up and FastAPI has created tables.
 Idempotent importers make repeated execution safe.
 """
-import asyncio
 import subprocess
 import sys
 from pathlib import Path

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from app.services.docx_renderer import DocxArtifactRenderer
 from app.services.output_templates import OutputTemplateRegistry
 
