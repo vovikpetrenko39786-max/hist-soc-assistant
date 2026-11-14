@@ -68,7 +68,9 @@ contact Railway or prove that backups can be restored.
 ## 5. Staged deployment and rollback
 
 Deploy the backend and bot from the same reviewed commit in a controlled
-maintenance window. Immediately verify public `/health`, authenticated bot
+maintenance window. Configure Railway's healthcheck path as `/ready`; it must
+return HTTP 200 before traffic is considered ready. Keep `/health` as a liveness
+check only. Immediately verify public `/health`, public `/ready`, authenticated bot
 requests, denial for a non-allowlisted ID, denial of another user's course,
 strict textbook behavior, next-lesson memory, DOCX/PDF download, and persistence
 after restarting both services.

@@ -1,6 +1,9 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 import app.models
 from app.api.routes import (
@@ -22,7 +25,8 @@ from app.api.routes import (
 from app.core.config import get_settings
 from app.core.pilot_auth import require_pilot_access
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import SessionLocal, engine
+from app.services.runtime_readiness import ReadinessCheck, runtime_readiness_checks
 
 settings = get_settings()
 
@@ -57,3 +61,46 @@ app.include_router(web_knowledge.router, prefix="/api/v1", dependencies=[Depends
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": settings.app_name}
+
+
+async def _database_readiness_check() -> ReadinessCheck:
+    async def query() -> tuple[bool, bool]:
+        async with SessionLocal() as session:
+            row = (
+                await session.execute(
+                    text(
+                        "SELECT "
+                        "to_regclass('public.generation_runs') IS NOT NULL, "
+                        "EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')"
+                    )
+                )
+            ).one()
+            return bool(row[0]), bool(row[1])
+
+    try:
+        schema_ready, vector_ready = await asyncio.wait_for(query(), timeout=5)
+    except Exception:
+        return ReadinessCheck(
+            "database",
+            False,
+            "Database readiness check failed.",
+        )
+    if not schema_ready:
+        return ReadinessCheck("database", False, "Required database schema is missing.")
+    if not vector_ready:
+        return ReadinessCheck("database", False, "pgvector extension is missing.")
+    return ReadinessCheck("database", True, "Database schema and pgvector are ready.")
+
+
+@app.get("/ready")
+async def readiness():
+    checks = runtime_readiness_checks(settings)
+    checks.append(await _database_readiness_check())
+    ready = all(item.ok for item in checks)
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={
+            "ready": ready,
+            "release": settings.pilot_release_label,
+        },
+    )

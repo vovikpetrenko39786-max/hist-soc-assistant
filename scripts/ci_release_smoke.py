@@ -343,6 +343,13 @@ async def run_smoke(output_dir: Path) -> None:
             health = await client.get("/health")
             require(health.status_code == 200, "Public health endpoint failed")
 
+            readiness = await client.get("/ready")
+            require(
+                readiness.status_code == 200,
+                f"Readiness endpoint failed: {readiness.text}",
+            )
+            require(readiness.json().get("ready") is True, "Readiness endpoint is not ready")
+
             unauthenticated = await client.get("/api/v1/outputs/templates")
             require(
                 unauthenticated.status_code == 401,
