@@ -63,3 +63,5 @@ jobs:
         run: python scripts/ci_db_schema_smoke.py
       - name: Smoke-test authenticated DOCX export on isolated PostgreSQL
         run: python scripts/ci_release_smoke.py
+      - name: Rehearse isolated PostgreSQL and file backup restoration
+        run: python scripts/ci_restore_drill.py
