@@ -77,6 +77,53 @@ class LessonQualityGate:
             else "Рефлексия отсутствует.",
         )
 
+        # Preserve the established quality-report contract while the stricter
+        # validator below checks source identity and quote permissions too.
+        allowed_chunks = {
+            str(item.get("chunk_id")): item
+            for item in source_manifest
+            if item.get("chunk_id")
+            and (item.get("source_id") or item.get("source_key") or item.get("url"))
+        }
+        invalid_refs = [
+            ref
+            for ref in artifact.source_references
+            if str(ref.chunk_id) not in allowed_chunks
+        ]
+        add(
+            "source_subset",
+            not invalid_refs,
+            "error",
+            "Все source references происходят из retrieval manifest."
+            if not invalid_refs
+            else f"Найдены {len(invalid_refs)} неподтверждённых source reference.",
+        )
+
+        page_mismatches = []
+        for ref in artifact.source_references:
+            manifest = allowed_chunks.get(str(ref.chunk_id))
+            if not manifest:
+                continue
+            for field in (
+                "page_pdf_start",
+                "page_pdf_end",
+                "page_print_start",
+                "page_print_end",
+            ):
+                if (
+                    manifest.get(field) is not None
+                    and getattr(ref, field) != manifest[field]
+                ):
+                    page_mismatches.append((str(ref.chunk_id), field))
+        add(
+            "page_grounding",
+            not page_mismatches,
+            "error",
+            "Все страницы взяты из retrieval manifest."
+            if not page_mismatches
+            else f"Есть расхождения страниц: {page_mismatches[:5]}",
+        )
+
         # Reject forged source identity, page numbers, quote permissions and
         # ambiguous retrieval chunk ids before considering an artifact grounded.
         source_violations = validate_source_references(

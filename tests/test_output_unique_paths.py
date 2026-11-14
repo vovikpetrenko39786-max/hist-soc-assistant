@@ -33,7 +33,12 @@ async def test_repeated_render_preserves_prior_export(tmp_path, monkeypatch, run
     monkeypatch.setattr(
         output_service,
         "settings",
-        SimpleNamespace(output_storage_dir=str(tmp_path), output_keep_intermediate_docx_for_pdf=True),
+        SimpleNamespace(
+            app_env="test",
+            output_storage_dir=str(tmp_path),
+            output_keep_intermediate_docx_for_pdf=True,
+            output_min_free_mb=1,
+        ),
     )
     monkeypatch.setattr(
         output_service.OutputTemplateRegistry,
@@ -54,6 +59,7 @@ async def test_repeated_render_preserves_prior_export(tmp_path, monkeypatch, run
     run_id = uuid.uuid4()
     run = SimpleNamespace(
         id=run_id,
+        status="generated",
         task_type="lesson",
         output_json={"teacher": {"title": "Repeated title"}},
     )
