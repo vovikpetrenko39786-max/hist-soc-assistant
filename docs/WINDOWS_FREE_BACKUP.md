@@ -21,7 +21,8 @@ railway login
 Create a local folder **outside the Git repository**, preferably on a drive with enough free space:
 
 ```powershell
-$BackupRoot = Join-Path $HOME ("HistSoc-backup-" + (Get-Date -Format "yyyy-MM-dd-HHmm"))
+$Documents = [Environment]::GetFolderPath("MyDocuments")
+$BackupRoot = Join-Path $Documents ("HistSoc-backup-" + (Get-Date -Format "yyyy-MM-dd-HHmm"))
 New-Item -ItemType Directory -Path $BackupRoot | Out-Null
 Write-Host $BackupRoot
 ```

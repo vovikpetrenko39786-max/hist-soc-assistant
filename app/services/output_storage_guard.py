@@ -48,6 +48,10 @@ def output_directory(
         raise OutputStorageConfigurationError("Declared volume path must be absolute")
     volume = declared_volume.resolve()
     output = configured.resolve()
+    if volume.parent == volume:
+        raise OutputStorageConfigurationError(
+            "Declared persistent volume must not be a filesystem root"
+        )
     if not volume.is_dir():
         raise OutputStorageConfigurationError("Declared persistent volume directory is missing")
     if output == volume or not output.is_relative_to(volume):

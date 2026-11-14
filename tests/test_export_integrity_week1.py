@@ -1,5 +1,6 @@
 """Unit tests for export integrity and path containment."""
 from hashlib import sha256
+from pathlib import Path
 
 import pytest
 
@@ -74,3 +75,22 @@ def test_verified_legacy_root_preserves_old_document(tmp_path):
 def test_unsafe_legacy_root_configuration_is_rejected(tmp_path, raw):
     with pytest.raises(ExportIntegrityError, match="invalid_roots"):
         storage_roots(str(tmp_path), raw)
+
+
+def test_filesystem_root_is_rejected_for_current_storage():
+    filesystem_root = Path(Path.cwd().anchor)
+    with pytest.raises(ExportIntegrityError, match="invalid_roots"):
+        storage_roots(str(filesystem_root))
+
+
+def test_filesystem_root_is_rejected_by_direct_verifier(tmp_path):
+    file = tmp_path / "lesson.docx"
+    file.write_bytes(b"contents")
+    filesystem_root = Path(Path.cwd().anchor)
+    with pytest.raises(ExportIntegrityError, match="invalid_root"):
+        verified_export_path(
+            str(file),
+            str(filesystem_root),
+            len(b"contents"),
+            sha256(b"contents").hexdigest(),
+        )

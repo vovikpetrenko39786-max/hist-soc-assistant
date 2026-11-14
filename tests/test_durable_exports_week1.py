@@ -1,4 +1,5 @@
 """Safety requirements for durable exports and non-overwriting filenames."""
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -49,6 +50,16 @@ def test_production_cannot_write_outside_mount(tmp_path):
     with pytest.raises(OutputStorageConfigurationError, match="subdirectory"):
         output_directory(str(tmp_path / "other"), app_env="production",
                          volume_mount_path=str(volume))
+
+
+def test_production_cannot_use_filesystem_root_as_declared_volume():
+    filesystem_root = Path(Path.cwd().anchor)
+    with pytest.raises(OutputStorageConfigurationError, match="filesystem root"):
+        output_directory(
+            str(filesystem_root / "generated_outputs"),
+            app_env="production",
+            volume_mount_path=str(filesystem_root),
+        )
 
 
 def test_production_missing_mount_is_rejected(tmp_path):

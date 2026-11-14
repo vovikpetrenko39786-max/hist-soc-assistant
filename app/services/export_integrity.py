@@ -14,6 +14,10 @@ class ExportIntegrityError(ValueError):
         self.reason = reason
 
 
+def _is_filesystem_root(path: Path) -> bool:
+    return path.parent == path
+
+
 def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> list[Path]:
     """Return explicit read roots without broadening writes to legacy storage."""
     try:
@@ -25,12 +29,17 @@ def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> li
     ):
         raise ExportIntegrityError("invalid_roots")
 
-    roots = [Path(current_root).resolve()]
+    current = Path(current_root).resolve()
+    if _is_filesystem_root(current):
+        raise ExportIntegrityError("invalid_roots")
+    roots = [current]
     for item in legacy:
         root = Path(item)
-        if not root.is_absolute() or root == Path("/"):
+        if not root.is_absolute():
             raise ExportIntegrityError("invalid_roots")
         resolved = root.resolve()
+        if _is_filesystem_root(resolved):
+            raise ExportIntegrityError("invalid_roots")
         if resolved not in roots:
             roots.append(resolved)
     return roots
@@ -55,6 +64,8 @@ def verified_export_path(
         raise ExportIntegrityError("unsupported_format")
 
     root = Path(root_value).resolve()
+    if _is_filesystem_root(root):
+        raise ExportIntegrityError("invalid_root")
     path = Path(recorded_path).resolve()
     if path == root or not path.is_relative_to(root):
         raise ExportIntegrityError("outside_root")
