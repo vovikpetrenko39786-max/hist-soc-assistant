@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 import re
-import shutil
 import uuid
 
 from fastapi import UploadFile

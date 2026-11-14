@@ -1,12 +1,12 @@
 import secrets
-import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.core.config import get_settings
+from app.core.pilot_auth import current_principal, is_strong_shared_key
 from app.models.entities import ExportedFile, GenerationRun, PilotFeedback
 from app.schemas.pilot import PilotFeedbackCreate
 
@@ -15,8 +15,8 @@ settings = get_settings()
 
 
 def _require_admin(x_admin_key: str | None):
-    if not settings.admin_api_key:
-        raise HTTPException(status_code=503, detail="ADMIN_API_KEY is not configured")
+    if not is_strong_shared_key(settings.admin_api_key):
+        raise HTTPException(status_code=503, detail="Strong ADMIN_API_KEY is not configured")
     if not x_admin_key or not secrets.compare_digest(x_admin_key, settings.admin_api_key):
         raise HTTPException(status_code=401, detail="Invalid admin key")
 
@@ -24,12 +24,19 @@ def _require_admin(x_admin_key: str | None):
 @router.post("/feedback")
 async def create_feedback(
     payload: PilotFeedbackCreate,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
+    principal = current_principal(request)
+    user_external_id = (
+        principal.external_id
+        if principal.role == "pilot_user"
+        else payload.user_external_id
+    )
     row = PilotFeedback(
         channel=payload.channel,
         category=payload.category,
-        user_external_id=payload.user_external_id,
+        user_external_id=user_external_id,
         username=payload.username,
         display_name=payload.display_name,
         text=payload.text,

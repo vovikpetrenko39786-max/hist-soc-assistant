@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.schemas.generation import LessonArtifact
+from app.services.source_reference_validation import validate_source_references
 
 
 class LessonQualityGate:
@@ -76,14 +77,17 @@ class LessonQualityGate:
             else "Рефлексия отсутствует.",
         )
 
-        # Source grounding: references must be a subset of manifest.
+        # Preserve the established quality-report contract while the stricter
+        # validator below checks source identity and quote permissions too.
         allowed_chunks = {
             str(item.get("chunk_id")): item
             for item in source_manifest
-            if item.get("chunk_id") and (item.get("source_id") or item.get("source_key") or item.get("url"))
+            if item.get("chunk_id")
+            and (item.get("source_id") or item.get("source_key") or item.get("url"))
         }
         invalid_refs = [
-            ref for ref in artifact.source_references
+            ref
+            for ref in artifact.source_references
             if str(ref.chunk_id) not in allowed_chunks
         ]
         add(
@@ -100,12 +104,16 @@ class LessonQualityGate:
             manifest = allowed_chunks.get(str(ref.chunk_id))
             if not manifest:
                 continue
-            fields = [
-                "page_pdf_start", "page_pdf_end",
-                "page_print_start", "page_print_end",
-            ]
-            for field in fields:
-                if manifest.get(field) is not None and getattr(ref, field) != manifest[field]:
+            for field in (
+                "page_pdf_start",
+                "page_pdf_end",
+                "page_print_start",
+                "page_print_end",
+            ):
+                if (
+                    manifest.get(field) is not None
+                    and getattr(ref, field) != manifest[field]
+                ):
                     page_mismatches.append((str(ref.chunk_id), field))
         add(
             "page_grounding",
@@ -114,6 +122,20 @@ class LessonQualityGate:
             "Все страницы взяты из retrieval manifest."
             if not page_mismatches
             else f"Есть расхождения страниц: {page_mismatches[:5]}",
+        )
+
+        # Reject forged source identity, page numbers, quote permissions and
+        # ambiguous retrieval chunk ids before considering an artifact grounded.
+        source_violations = validate_source_references(
+            artifact.source_references, source_manifest
+        )
+        add(
+            "source_reference_integrity",
+            not source_violations,
+            "error",
+            "Ссылки подтверждены retrieval manifest."
+            if not source_violations
+            else f"Некорректные ссылки на источники: {len(source_violations)}.",
         )
 
         required_concepts = {

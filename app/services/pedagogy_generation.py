@@ -7,11 +7,11 @@ from app.schemas.retrieval import RetrievalRequest
 from app.services.catalog import CurriculumCatalogService
 from app.services.curriculum_resolver import CurriculumResolver
 from app.services.generation_context import GroundedContextBuilder
+from app.services.openai_pedagogy import OpenAIResponsesPedagogyProvider
 from app.services.pedagogy_provider import HttpPedagogyProvider, TemplatePedagogyProvider
 from app.services.pedagogy_quality import PedagogyQualityGate
 from app.services.retrieval import RetrievalService
 from app.services.web_knowledge import WebKnowledgeService
-from app.services.openai_pedagogy import OpenAIResponsesPedagogyProvider
 
 settings = get_settings()
 
@@ -124,6 +124,12 @@ class PedagogyGenerationService:
                         strict_source=request.strict_source,
                     ),
                 )
+
+        if request.strict_source and not (retrieval.get("hits") or []):
+            raise PedagogyGenerationError(
+                "По указанному учебнику не найдено релевантного текста. "
+                "Генерация остановлена, чтобы избежать выдуманных источников."
+            )
 
         # IDEA/informational library-first fallback.
         # Informational requests may be routed as idea_enhancement,

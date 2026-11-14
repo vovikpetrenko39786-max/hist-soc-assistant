@@ -177,7 +177,7 @@ def test_quality_gate_rejects_invented_source():
     artifact = LessonArtifact.model_validate(
         asyncio.run(TemplateLessonProvider().generate_lesson(context))
     )
-    artifact.source_references[0].chunk_id = uuid.uuid4()
+    artifact.source_references[0].chunk_id = str(uuid.uuid4())
     report = LessonQualityGate().evaluate(
         artifact, card, context["source_manifest"]
     )
