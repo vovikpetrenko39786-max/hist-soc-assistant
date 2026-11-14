@@ -154,8 +154,12 @@ def validate_release_configuration(
                     add("LEGACY_OUTPUT_ROOTS", "INFO", "Legacy output roots are explicitly read-only and volume-scoped.")
 
     admin_key = api.get("ADMIN_API_KEY", "")
-    if not admin_key or len(admin_key) < 32:
-        add("ADMIN_API_KEY_WEAK", "WARNING", "Configure a strong separate administrator key.")
+    if not strong_key(admin_key):
+        add(
+            "ADMIN_API_KEY_WEAK",
+            "ERROR",
+            "Administrator key must be a generated high-entropy token of at least 43 characters.",
+        )
     elif admin_key == api_key and api_key:
         add("ADMIN_PILOT_KEY_REUSED", "WARNING", "Administrator and pilot API keys should be different.")
 

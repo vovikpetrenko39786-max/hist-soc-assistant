@@ -49,6 +49,13 @@ def test_short_pilot_token_rejected():
     assert "PILOT_API_KEY_WEAK" in errors(api, bot)
 
 
+@pytest.mark.parametrize("admin_key", ["", "a" * 42, "a" * 64])
+def test_weak_admin_token_is_a_release_blocker(admin_key):
+    api, bot = configs()
+    api["ADMIN_API_KEY"] = admin_key
+    assert "ADMIN_API_KEY_WEAK" in errors(api, bot)
+
+
 def test_different_pilot_tokens_rejected_without_leakage():
     api, bot = configs()
     bot["PILOT_API_KEY"] = "different-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-xyz"
