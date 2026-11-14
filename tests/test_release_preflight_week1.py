@@ -1,4 +1,7 @@
 """Test release-preflight rules with synthetic non-secret values."""
+import json
+import uuid
+
 import pytest
 
 from release_preflight import main, parse_env_file, validate_release_configuration
@@ -8,13 +11,29 @@ ADMIN = "admin-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdef"
 
 
 def configs():
+    bindings = json.dumps(
+        {
+            "12345": {
+                "social-studies": {
+                    "class_course_id": str(uuid.uuid4()),
+                    "source_key": "synthetic-book",
+                    "label": "Synthetic course",
+                }
+            }
+        }
+    )
     api = {
+        "APP_ENV": "production",
+        "AUTO_CREATE_TABLES": "false",
         "PILOT_API_KEY": KEY,
         "ADMIN_API_KEY": ADMIN,
         "OUTPUT_STORAGE_DIR": "/app/data/source_files/generated_outputs",
         "RAILWAY_VOLUME_MOUNT_PATH": "/app/data/source_files",
         "TELEGRAM_ALLOWED_USER_IDS": "12345,67890",
-        "TELEGRAM_COURSE_BINDINGS_JSON": "{}",
+        "TELEGRAM_COURSE_BINDINGS_JSON": bindings,
+        "GENERATION_PROVIDER": "http",
+        "GENERATION_HTTP_BASE_URL": "https://generation.invalid/v1",
+        "GENERATION_HTTP_API_KEY": "synthetic-test-key",
         "EXPORT_INVENTORY_CONFIRMED": "true",
         "EXPORT_BACKUP_CONFIRMED": "true",
         "OUTPUT_STORAGE_MIGRATION_CONFIRMED": "true",
@@ -24,7 +43,7 @@ def configs():
         "PILOT_API_KEY": KEY,
         "TELEGRAM_BOT_TOKEN": "test-not-a-live-token",
         "TELEGRAM_ALLOWED_USER_IDS": "12345,67890",
-        "TELEGRAM_COURSE_BINDINGS_JSON": "{}",
+        "TELEGRAM_COURSE_BINDINGS_JSON": bindings,
     }
     return api, bot
 
@@ -89,6 +108,31 @@ def test_backend_and_bot_course_bindings_must_match():
     assert "COURSE_BINDINGS_MISMATCH" in errors(api, bot)
 
 
+def test_empty_course_bindings_are_a_release_blocker():
+    api, bot = configs()
+    api["TELEGRAM_COURSE_BINDINGS_JSON"] = "{}"
+    bot["TELEGRAM_COURSE_BINDINGS_JSON"] = "{}"
+    assert "COURSE_BINDINGS_EMPTY" in errors(api, bot)
+
+
+def test_non_production_app_env_is_rejected():
+    api, bot = configs()
+    api["APP_ENV"] = "dev"
+    assert "APP_ENV_NOT_PRODUCTION" in errors(api, bot)
+
+
+def test_automatic_schema_creation_is_rejected():
+    api, bot = configs()
+    api["AUTO_CREATE_TABLES"] = "true"
+    assert "AUTO_CREATE_TABLES_ENABLED" in errors(api, bot)
+
+
+def test_non_production_generation_provider_is_rejected():
+    api, bot = configs()
+    api["GENERATION_PROVIDER"] = "template"
+    assert "GENERATION_PROVIDER_NOT_READY" in errors(api, bot)
+
+
 def test_backup_confirmations_are_release_blockers():
     api, bot = configs()
     api["EXPORT_BACKUP_CONFIRMED"] = "false"
@@ -113,6 +157,12 @@ def test_path_sibling_not_treated_as_mount_child():
     assert "OUTPUT_EPHEMERAL" in errors(api, bot)
 
 
+def test_output_volume_root_is_a_release_blocker():
+    api, bot = configs()
+    api["OUTPUT_STORAGE_DIR"] = api["RAILWAY_VOLUME_MOUNT_PATH"]
+    assert "OUTPUT_MOUNT_ROOT" in errors(api, bot)
+
+
 def test_relative_output_path_resolves_under_app():
     api, bot = configs()
     api["OUTPUT_STORAGE_DIR"] = "data/source_files/generated_outputs"
@@ -129,6 +179,12 @@ def test_legacy_output_roots_cannot_escape_volume():
     api, bot = configs()
     api["OUTPUT_LEGACY_STORAGE_ROOTS_JSON"] = '["/tmp/old-exports"]'
     assert "LEGACY_OUTPUT_ROOTS_UNSAFE" in errors(api, bot)
+
+
+def test_admin_and_pilot_keys_must_be_distinct():
+    api, bot = configs()
+    api["ADMIN_API_KEY"] = api["PILOT_API_KEY"]
+    assert "ADMIN_PILOT_KEY_REUSED" in errors(api, bot)
 
 
 def test_duplicate_env_keys_rejected(tmp_path):

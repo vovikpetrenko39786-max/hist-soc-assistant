@@ -12,6 +12,9 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.core.pilot_auth import is_strong_shared_key, parse_course_bindings
+from telegram_bot.course_selection import parse_course_bindings as parse_bot_course_bindings
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -67,16 +70,10 @@ def validate_release_configuration(
 
     api_key = api.get("PILOT_API_KEY", "")
     bot_key = bot.get("PILOT_API_KEY", "")
-    def strong_key(value: str) -> bool:
-        return (
-            len(value) >= 43
-            and not any(character.isspace() for character in value)
-            and len(set(value)) >= 12
-        )
 
     if not api_key or not bot_key:
         add("PILOT_API_KEY_MISSING", "ERROR", "Shared API access key must be set in both services.")
-    elif not strong_key(api_key) or not strong_key(bot_key):
+    elif not is_strong_shared_key(api_key) or not is_strong_shared_key(bot_key):
         add("PILOT_API_KEY_WEAK", "ERROR", "Shared API access key must be a generated high-entropy token of at least 43 characters.")
     elif api_key != bot_key:
         add("PILOT_API_KEY_MISMATCH", "ERROR", "Backend and bot have different shared API access keys.")
@@ -86,6 +83,20 @@ def validate_release_configuration(
     token = bot.get("TELEGRAM_BOT_TOKEN", "")
     if not token or token.lower().startswith(("replace", "your", "example")):
         add("TELEGRAM_BOT_TOKEN", "ERROR", "Telegram bot token is not configured.")
+
+    if api.get("APP_ENV", "").strip().casefold() not in {"prod", "production"}:
+        add("APP_ENV_NOT_PRODUCTION", "ERROR", "Backend APP_ENV must identify production.")
+    if api.get("AUTO_CREATE_TABLES", "").strip().casefold() not in {
+        "false",
+        "0",
+        "no",
+        "off",
+    }:
+        add(
+            "AUTO_CREATE_TABLES_ENABLED",
+            "ERROR",
+            "Automatic schema creation must be disabled in production.",
+        )
 
     allowlist = bot.get("TELEGRAM_ALLOWED_USER_IDS", "").strip()
     allowed_tokens = re.split(r"[,;\s]+", allowlist) if allowlist else []
@@ -109,15 +120,32 @@ def validate_release_configuration(
     try:
         parsed_api_bindings = json.loads(api_bindings) if api_bindings else {}
         parsed_bot_bindings = json.loads(bot_bindings) if bot_bindings else {}
+        normalized_api_bindings = parse_course_bindings(api_bindings)
+        normalized_bot_bindings = parse_bot_course_bindings(bot_bindings)
     except (TypeError, ValueError):
         add("COURSE_BINDINGS_INVALID", "ERROR", "Course bindings are not valid JSON.")
     else:
         if parsed_api_bindings != parsed_bot_bindings:
             add("COURSE_BINDINGS_MISMATCH", "ERROR", "Backend and bot course bindings differ.")
-        elif parsed_api_bindings:
+        elif normalized_api_bindings and normalized_bot_bindings:
             add("COURSE_BINDINGS_MATCH", "INFO", "Backend and bot course bindings match.")
         else:
-            add("COURSE_BINDINGS_EMPTY", "WARNING", "No user-scoped courses are configured.")
+            add("COURSE_BINDINGS_EMPTY", "ERROR", "No user-scoped courses are configured.")
+
+    provider = api.get("GENERATION_PROVIDER", "").strip().casefold()
+    provider_ready = (
+        provider == "openai_responses" and bool(api.get("OPENAI_API_KEY", "").strip())
+    ) or (
+        provider == "http"
+        and bool(api.get("GENERATION_HTTP_BASE_URL", "").strip())
+        and bool(api.get("GENERATION_HTTP_API_KEY", "").strip())
+    )
+    if not provider_ready:
+        add(
+            "GENERATION_PROVIDER_NOT_READY",
+            "ERROR",
+            "A credentialed production generation provider is required.",
+        )
 
     raw_dir = api.get("OUTPUT_STORAGE_DIR", "data/generated_outputs").strip()
     raw_mount = api.get("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
@@ -128,12 +156,16 @@ def validate_release_configuration(
     else:
         output = _absolute_path(raw_dir, app_dir)
         mount = _absolute_path(raw_mount, app_dir)
-        if mount == Path("/") or not output.is_relative_to(mount):
+        if mount.parent == mount or not output.is_relative_to(mount):
             add("OUTPUT_EPHEMERAL", "ERROR", "Output directory is outside the backend's persistent Railway volume.")
+        elif output == mount:
+            add(
+                "OUTPUT_MOUNT_ROOT",
+                "ERROR",
+                "Generated exports require a dedicated subdirectory inside the volume.",
+            )
         else:
             add("OUTPUT_PERSISTENT", "INFO", "Output directory is inside a mounted Railway volume.")
-            if output == mount:
-                add("OUTPUT_MOUNT_ROOT", "WARNING", "Prefer a dedicated subdirectory for generated exports.")
             legacy_raw = api.get("OUTPUT_LEGACY_STORAGE_ROOTS_JSON", "[]")
             try:
                 legacy_roots = json.loads(legacy_raw)
@@ -145,7 +177,7 @@ def validate_release_configuration(
                 elif any(
                     not isinstance(item, str)
                     or not Path(item).is_absolute()
-                    or Path(item).resolve() == Path("/")
+                    or Path(item).resolve().parent == Path(item).resolve()
                     or not Path(item).resolve().is_relative_to(mount)
                     for item in legacy_roots
                 ):
@@ -154,14 +186,14 @@ def validate_release_configuration(
                     add("LEGACY_OUTPUT_ROOTS", "INFO", "Legacy output roots are explicitly read-only and volume-scoped.")
 
     admin_key = api.get("ADMIN_API_KEY", "")
-    if not strong_key(admin_key):
+    if not is_strong_shared_key(admin_key):
         add(
             "ADMIN_API_KEY_WEAK",
             "ERROR",
             "Administrator key must be a generated high-entropy token of at least 43 characters.",
         )
     elif admin_key == api_key and api_key:
-        add("ADMIN_PILOT_KEY_REUSED", "WARNING", "Administrator and pilot API keys should be different.")
+        add("ADMIN_PILOT_KEY_REUSED", "ERROR", "Administrator and pilot API keys must be different.")
 
     confirmations = {
         "EXPORT_INVENTORY_CONFIRMED": "Read-only legacy export inventory has not been confirmed.",
