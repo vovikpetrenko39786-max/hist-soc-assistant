@@ -63,5 +63,14 @@ jobs:
         run: python scripts/ci_db_schema_smoke.py
       - name: Smoke-test authenticated DOCX export on isolated PostgreSQL
         run: python scripts/ci_release_smoke.py
+      - name: Seed synthetic presentation dataset twice (idempotency)
+        env:
+          APP_ENV: staging
+          DEMO_SEED_ENABLED: "true"
+          DEMO_DATASET_ID: hist-soc-presentation-v1
+          RAILWAY_ENVIRONMENT_NAME: staging
+        run: |
+          python scripts/staging_demo_seed.py
+          python scripts/staging_demo_seed.py
       - name: Rehearse isolated PostgreSQL and file backup restoration
         run: python scripts/ci_restore_drill.py

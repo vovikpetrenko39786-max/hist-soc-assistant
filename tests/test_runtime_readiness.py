@@ -105,3 +105,38 @@ def test_production_readiness_rejects_legacy_root_outside_volume(tmp_path):
     )
     checks = check_map(settings, production_env(tmp_path))
     assert checks["durable_output_storage"] is False
+
+
+def test_explicit_railway_staging_profile_accepts_template_provider(tmp_path):
+    settings = production_settings(
+        tmp_path,
+        app_env="staging",
+        generation_provider="template",
+        generation_http_base_url="",
+        generation_http_api_key="",
+    )
+    env = production_env(
+        tmp_path,
+        RAILWAY_ENVIRONMENT_NAME="staging",
+        DEMO_SEED_ENABLED="true",
+        DEMO_DATASET_ID="hist-soc-presentation-v1",
+        EXPORT_INVENTORY_CONFIRMED="false",
+        EXPORT_BACKUP_CONFIRMED="false",
+        OUTPUT_STORAGE_MIGRATION_CONFIRMED="false",
+    )
+    checks = check_map(settings, env)
+    assert checks
+    assert all(checks.values())
+    assert checks["demo_dataset"] is True
+
+
+def test_railway_staging_without_explicit_demo_marker_fails_closed(tmp_path):
+    settings = production_settings(
+        tmp_path,
+        app_env="staging",
+        generation_provider="template",
+    )
+    env = production_env(tmp_path, RAILWAY_ENVIRONMENT_NAME="staging")
+    checks = check_map(settings, env)
+    assert checks["production_mode"] is False
+    assert checks["generation_provider"] is False

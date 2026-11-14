@@ -14,6 +14,8 @@ from app.services.output_storage_guard import (
     require_free_export_space,
 )
 
+DEMO_DATASET_ID = "hist-soc-presentation-v1"
+
 
 @dataclass(frozen=True)
 class ReadinessCheck:
@@ -36,11 +38,20 @@ def runtime_readiness_checks(
         environment.get("RAILWAY_SERVICE_ID")
         or environment.get("RAILWAY_ENVIRONMENT_ID")
     )
-    production = on_railway or settings.app_env.strip().casefold() in {
+    app_environment = settings.app_env.strip().casefold()
+    demo_staging = bool(
+        on_railway
+        and app_environment == "staging"
+        and environment.get("RAILWAY_ENVIRONMENT_NAME", "").strip().casefold()
+        == "staging"
+        and _confirmed(environment, "DEMO_SEED_ENABLED")
+        and environment.get("DEMO_DATASET_ID", "").strip() == DEMO_DATASET_ID
+    )
+    production = on_railway or app_environment in {
         "prod",
         "production",
     }
-    if not production:
+    if not production and not demo_staging:
         return [
             ReadinessCheck(
                 "production_gate",
@@ -51,12 +62,20 @@ def runtime_readiness_checks(
 
     checks: list[ReadinessCheck] = []
 
-    app_env_ok = settings.app_env.strip().casefold() in {"prod", "production"}
+    app_env_ok = app_environment in {"prod", "production"} or demo_staging
     checks.append(
         ReadinessCheck(
             "production_mode",
             app_env_ok,
-            "APP_ENV identifies production." if app_env_ok else "APP_ENV must be production.",
+            (
+                "Explicit isolated staging profile is active."
+                if demo_staging
+                else (
+                    "APP_ENV identifies production."
+                    if app_env_ok
+                    else "APP_ENV must be production."
+                )
+            ),
         )
     )
     checks.append(
@@ -151,7 +170,7 @@ def runtime_readiness_checks(
         provider == "http"
         and bool(settings.generation_http_base_url)
         and bool(settings.generation_http_api_key)
-    )
+    ) or (demo_staging and provider == "template")
     checks.append(
         ReadinessCheck(
             "generation_provider",
@@ -195,30 +214,39 @@ def runtime_readiness_checks(
         )
     )
 
-    for name, code, detail in (
-        (
-            "EXPORT_INVENTORY_CONFIRMED",
-            "export_inventory",
-            "Legacy export inventory is confirmed.",
-        ),
-        (
-            "EXPORT_BACKUP_CONFIRMED",
-            "backup_restore",
-            "Restorable database and file backups are confirmed.",
-        ),
-        (
-            "OUTPUT_STORAGE_MIGRATION_CONFIRMED",
-            "storage_migration",
-            "Output storage migration is confirmed.",
-        ),
-    ):
-        confirmed = _confirmed(environment, name)
+    if demo_staging:
         checks.append(
             ReadinessCheck(
-                code,
-                confirmed,
-                detail if confirmed else "Required operator confirmation is missing.",
+                "demo_dataset",
+                True,
+                "Synthetic presentation dataset is explicitly selected.",
             )
         )
+    else:
+        for name, code, detail in (
+            (
+                "EXPORT_INVENTORY_CONFIRMED",
+                "export_inventory",
+                "Legacy export inventory is confirmed.",
+            ),
+            (
+                "EXPORT_BACKUP_CONFIRMED",
+                "backup_restore",
+                "Restorable database and file backups are confirmed.",
+            ),
+            (
+                "OUTPUT_STORAGE_MIGRATION_CONFIRMED",
+                "storage_migration",
+                "Output storage migration is confirmed.",
+            ),
+        ):
+            confirmed = _confirmed(environment, name)
+            checks.append(
+                ReadinessCheck(
+                    code,
+                    confirmed,
+                    detail if confirmed else "Required operator confirmation is missing.",
+                )
+            )
 
     return checks
