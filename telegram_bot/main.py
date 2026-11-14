@@ -217,7 +217,9 @@ async def cmd_course(message: Message, state: FSMContext):
 @router.message(F.text == "✅ Статус")
 async def cmd_status(message: Message):
     try:
-        data = await api.health()
+        if message.from_user is None:
+            raise BackendClientError("Telegram user identity is unavailable")
+        data = await api.health(message.from_user.id)
         await message.answer(
             "✅ Система доступна\n"
             f"Релиз: <b>{data.get('release')}</b>\n"

@@ -39,6 +39,8 @@ async def run(
                 f"telegram:{principal.external_id}" if principal.external_id else "admin"
             ),
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Assistant workflow failed")
         raise HTTPException(status_code=500, detail="Internal generation error") from exc

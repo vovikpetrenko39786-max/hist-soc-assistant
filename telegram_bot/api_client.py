@@ -21,9 +21,12 @@ class TeacherAssistantApi:
             raise BackendClientError("A valid pilot user ID is required")
         return {**self.headers, "X-Pilot-User-ID": str(user_id)}
 
-    async def health(self) -> dict:
+    async def health(self, user_id: int) -> dict:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.get(f"{self.base_url}/health")
+            response = await client.get(
+                f"{self.base_url}/api/v1/pilot/health",
+                headers=self.user_headers(user_id),
+            )
             response.raise_for_status()
             return response.json()
 

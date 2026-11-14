@@ -6,8 +6,12 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
+from app.api.routes import workflow as workflow_route
 from app.api.routes.outputs import authorize_export
+from app.api.routes.pilot import create_feedback
 from app.core import pilot_auth
+from app.core.pilot_auth import PilotPrincipal
+from app.schemas.pilot import PilotFeedbackCreate
 from app.schemas.workflow import NaturalWorkflowRequest
 from app.services.natural_language_workflow import NaturalLanguageWorkflowService
 from telegram_bot.api_client import TeacherAssistantApi
@@ -100,6 +104,94 @@ def test_telegram_client_attaches_user_scope_header():
         "X-Pilot-Key": PILOT_KEY,
         "X-Pilot-User-ID": "123",
     }
+
+
+@pytest.mark.asyncio
+async def test_telegram_health_uses_protected_pilot_endpoint(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"ok": True, "release": "test"}
+
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs):
+            captured["client_kwargs"] = kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, *, headers):
+            captured["url"] = url
+            captured["headers"] = headers
+            return FakeResponse()
+
+    monkeypatch.setattr("telegram_bot.api_client.httpx.AsyncClient", FakeAsyncClient)
+    client = TeacherAssistantApi("http://backend", api_key=PILOT_KEY)
+
+    assert await client.health(123) == {"ok": True, "release": "test"}
+    assert captured["url"] == "http://backend/api/v1/pilot/health"
+    assert captured["headers"] == {
+        "X-Pilot-Key": PILOT_KEY,
+        "X-Pilot-User-ID": "123",
+    }
+
+
+@pytest.mark.asyncio
+async def test_feedback_identity_comes_from_authenticated_principal():
+    class FakeSession:
+        row = None
+
+        def add(self, row):
+            self.row = row
+
+        async def commit(self):
+            return None
+
+        async def refresh(self, row):
+            row.id = uuid.uuid4()
+
+    session = FakeSession()
+    req = SimpleNamespace(
+        state=SimpleNamespace(pilot_principal=PilotPrincipal("pilot_user", "123"))
+    )
+    payload = PilotFeedbackCreate(
+        text="test",
+        user_external_id="456",
+    )
+
+    await create_feedback(payload, req, session)
+
+    assert session.row.user_external_id == "123"
+
+
+@pytest.mark.asyncio
+async def test_workflow_preserves_course_authorization_error(monkeypatch):
+    monkeypatch.setattr(
+        workflow_route,
+        "require_user_principal",
+        lambda request: PilotPrincipal("pilot_user", "123"),
+    )
+
+    def deny_course(request, class_course_id):
+        raise HTTPException(status_code=403, detail="Course access denied")
+
+    monkeypatch.setattr(workflow_route, "authorize_course", deny_course)
+    payload = NaturalWorkflowRequest(
+        message="Подготовь урок",
+        class_course_id=COURSE_ID,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await workflow_route.run(payload, request(), SimpleNamespace())
+
+    assert exc.value.status_code == 403
 
 
 @pytest.mark.asyncio
