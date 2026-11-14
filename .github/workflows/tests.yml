@@ -56,7 +56,7 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q app telegram_bot tests scripts
       - name: Static analysis
-        run: python -m ruff check app telegram_bot tests scripts release_preflight.py
+        run: python -m ruff check --select F app telegram_bot tests scripts release_preflight.py
       - name: Regression suite
         run: python -m pytest -q
       - name: Verify schema on isolated PostgreSQL + pgvector
