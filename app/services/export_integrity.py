@@ -18,8 +18,15 @@ def _is_filesystem_root(path: Path) -> bool:
     return path.parent == path
 
 
-def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> list[Path]:
+def storage_roots(
+    current_root: str,
+    legacy_roots_json: str | None = None,
+    *,
+    required_parent: str | None = None,
+) -> list[Path]:
     """Return explicit read roots without broadening writes to legacy storage."""
+    if not isinstance(current_root, str) or not current_root.strip():
+        raise ExportIntegrityError("invalid_roots")
     try:
         legacy = json.loads(legacy_roots_json or "[]")
     except (TypeError, ValueError) as exc:
@@ -42,6 +49,16 @@ def storage_roots(current_root: str, legacy_roots_json: str | None = None) -> li
             raise ExportIntegrityError("invalid_roots")
         if resolved not in roots:
             roots.append(resolved)
+
+    if required_parent is not None:
+        parent = Path(required_parent)
+        if not parent.is_absolute():
+            raise ExportIntegrityError("invalid_roots")
+        parent = parent.resolve()
+        if _is_filesystem_root(parent) or any(
+            root == parent or not root.is_relative_to(parent) for root in roots
+        ):
+            raise ExportIntegrityError("invalid_roots")
     return roots
 
 

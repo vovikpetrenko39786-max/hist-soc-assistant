@@ -1,4 +1,5 @@
 """Unit tests for export integrity and path containment."""
+import json
 from hashlib import sha256
 from pathlib import Path
 
@@ -94,3 +95,31 @@ def test_filesystem_root_is_rejected_by_direct_verifier(tmp_path):
             len(b"contents"),
             sha256(b"contents").hexdigest(),
         )
+
+
+def test_blank_current_storage_root_is_rejected():
+    with pytest.raises(ExportIntegrityError, match="invalid_roots"):
+        storage_roots("   ")
+
+
+def test_storage_roots_must_stay_inside_required_parent(tmp_path):
+    volume = tmp_path / "volume"
+    current = volume / "generated"
+    legacy = tmp_path / "outside"
+    current.mkdir(parents=True)
+    legacy.mkdir()
+    with pytest.raises(ExportIntegrityError, match="invalid_roots"):
+        storage_roots(
+            str(current),
+            json.dumps([str(legacy)]),
+            required_parent=str(volume),
+        )
+
+
+def test_current_storage_must_stay_inside_required_parent(tmp_path):
+    volume = tmp_path / "volume"
+    outside = tmp_path / "outside"
+    volume.mkdir()
+    outside.mkdir()
+    with pytest.raises(ExportIntegrityError, match="invalid_roots"):
+        storage_roots(str(outside), required_parent=str(volume))

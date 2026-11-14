@@ -7,6 +7,7 @@ from typing import Mapping
 
 from app.core.pilot_auth import is_strong_shared_key, parse_course_bindings
 from app.core.telegram_access import parse_allowed_user_ids
+from app.services.export_integrity import ExportIntegrityError, storage_roots
 from app.services.output_storage_guard import (
     OutputStorageConfigurationError,
     output_directory,
@@ -170,12 +171,17 @@ def runtime_readiness_checks(
             volume_mount_path=environment.get("RAILWAY_VOLUME_MOUNT_PATH"),
             on_railway=on_railway,
         )
+        storage_roots(
+            str(output),
+            settings.output_legacy_storage_roots_json,
+            required_parent=environment.get("RAILWAY_VOLUME_MOUNT_PATH"),
+        )
         require_free_export_space(
             output,
             minimum_free_mb=settings.output_min_free_mb,
         )
         output_ok = True
-    except (OutputStorageConfigurationError, OSError):
+    except (ExportIntegrityError, OutputStorageConfigurationError, OSError):
         output_ok = False
     checks.append(
         ReadinessCheck(

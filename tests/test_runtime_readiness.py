@@ -95,3 +95,13 @@ def test_non_production_skips_production_only_gate():
     checks = runtime_readiness_checks(Settings(app_env="test"), {})
     assert [item.code for item in checks] == ["production_gate"]
     assert checks[0].ok is True
+
+
+def test_production_readiness_rejects_legacy_root_outside_volume(tmp_path):
+    outside = tmp_path.parent / "outside-legacy"
+    settings = production_settings(
+        tmp_path,
+        output_legacy_storage_roots_json=json.dumps([str(outside)]),
+    )
+    checks = check_map(settings, production_env(tmp_path))
+    assert checks["durable_output_storage"] is False

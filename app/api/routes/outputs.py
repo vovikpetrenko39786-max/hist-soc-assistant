@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -15,6 +16,10 @@ from app.services.export_integrity import (
     verified_export_path_in_roots,
 )
 from app.services.output_service import OutputRenderError, OutputService
+from app.services.output_storage_guard import (
+    OutputStorageConfigurationError,
+    current_output_directory,
+)
 from app.services.output_templates import OutputTemplateRegistry
 
 router = APIRouter(prefix="/outputs", tags=["outputs"])
@@ -70,16 +75,27 @@ async def download_output(
     await authorize_export(request, session, item)
     try:
         settings = get_settings()
+        current_root = current_output_directory(settings)
+        production = bool(
+            os.getenv("RAILWAY_SERVICE_ID")
+            or os.getenv("RAILWAY_ENVIRONMENT_ID")
+            or settings.app_env.strip().casefold() in {"prod", "production"}
+        )
         path = verified_export_path_in_roots(
             item.file_path,
             storage_roots(
-                settings.output_storage_dir,
+                str(current_root),
                 settings.output_legacy_storage_roots_json,
+                required_parent=(
+                    os.getenv("RAILWAY_VOLUME_MOUNT_PATH") if production else None
+                ),
             ),
             item.size_bytes,
             item.sha256,
             file_format=item.file_format,
         )
+    except OutputStorageConfigurationError as exc:
+        raise HTTPException(status_code=503, detail="Export storage is misconfigured") from exc
     except (ExportIntegrityError, OSError) as exc:
         if isinstance(exc, OSError):
             raise HTTPException(
