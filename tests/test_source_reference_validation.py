@@ -33,7 +33,9 @@ def test_exact_reference_is_accepted():
 @pytest.mark.parametrize("change,code", [
     ({"source_id": "book-2"}, "source_id_mismatch"),
     ({"source_key": "history-6"}, "source_key_mismatch"),
+    ({"url": "https://attacker.invalid"}, "url_mismatch"),
     ({"page_pdf_start": 13}, "page_pdf_start_mismatch"),
+    ({"page_print_start": 13}, "page_print_start_mismatch"),
     ({"quote_safe": True}, "unsafe_quote_claim"),
 ])
 def test_rejects_forged_metadata(change, code):
