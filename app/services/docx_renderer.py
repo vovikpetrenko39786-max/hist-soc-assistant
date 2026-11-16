@@ -45,6 +45,12 @@ def _set_repeat_table_header(row):
     tr_pr.append(tbl_header)
 
 
+def _set_row_cant_split(row):
+    tr_pr = row._tr.get_or_add_trPr()
+    if tr_pr.find(qn("w:cantSplit")) is None:
+        tr_pr.append(OxmlElement("w:cantSplit"))
+
+
 def _set_cell_margins(cell, top=80, start=100, bottom=80, end=100):
     tc = cell._tc
     tc_pr = tc.get_or_add_tcPr()
@@ -165,19 +171,27 @@ class DocxArtifactRenderer:
             doc.add_paragraph()
 
     def _heading(self, doc, text, level=1):
-        doc.add_paragraph(text, style=f"Heading {level}")
+        paragraph = doc.add_paragraph(text, style=f"Heading {level}")
+        paragraph.paragraph_format.keep_with_next = True
+        paragraph.paragraph_format.keep_together = True
 
     def _bullet_list(self, doc, items):
         for item in items or []:
             doc.add_paragraph(str(item), style="List Bullet")
 
     def _numbered_list(self, doc, items):
-        for item in items or []:
-            doc.add_paragraph(str(item), style="List Number")
+        for index, item in enumerate(items or [], start=1):
+            paragraph = doc.add_paragraph()
+            paragraph.paragraph_format.left_indent = Cm(0.7)
+            paragraph.paragraph_format.first_line_indent = Cm(-0.5)
+            paragraph.paragraph_format.keep_together = True
+            paragraph.add_run(f"{index}. ").bold = True
+            paragraph.add_run(str(item))
 
     def _info_box(self, doc, title, lines, fill="EEF3F8"):
         table = doc.add_table(rows=1, cols=1)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        _set_row_cant_split(table.rows[0])
         cell = table.cell(0, 0)
         _set_cell_shading(cell, fill)
         _set_cell_margins(cell, 100, 140, 100, 140)
@@ -241,6 +255,7 @@ class DocxArtifactRenderer:
         for step in a.get("timeline", []):
             table = doc.add_table(rows=1, cols=2)
             table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            _set_row_cant_split(table.rows[0])
             table.autofit = False
             table.cell(0,0).width = Cm(3.0)
             table.cell(0,1).width = Cm(14.0)
@@ -341,6 +356,7 @@ class DocxArtifactRenderer:
                 )
                 self._heading(doc, label, level=2)
                 p = doc.add_paragraph()
+                p.paragraph_format.keep_with_next = True
                 p.add_run("Когда выбирать: ").bold = True
                 p.add_run(variant.get("when_to_use", ""))
                 self._info_box(doc, "Подготовка", variant.get("preparation", []))

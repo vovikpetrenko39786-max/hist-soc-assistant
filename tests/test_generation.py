@@ -183,6 +183,8 @@ def test_professional_lesson_docx_contains_methodical_sections(tmp_path):
         "В тетрадь",
     ):
         assert heading in xml
+    assert "w:cantSplit" in xml
+    assert xml.count("1. ") >= 3
 
 
 def test_quality_gate_passes_template_artifact():
