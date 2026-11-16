@@ -21,9 +21,10 @@ def main_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="🐞 Ошибка / отзыв"),
             ],
             [
-                KeyboardButton(text="ℹ️ Помощь"),
+                KeyboardButton(text="🧭 Мои курсы"),
                 KeyboardButton(text="✅ Статус"),
             ],
+            [KeyboardButton(text="ℹ️ Помощь")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Напишите запрос учителю-ассистенту…",

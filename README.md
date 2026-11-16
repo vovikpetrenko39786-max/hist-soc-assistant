@@ -258,6 +258,10 @@ Production LLM подключается через абстракцию provider
 
 Единый endpoint `POST /api/v1/pedagogy/generate` создаёт lesson, assessment, worksheet, homework и idea_enhancement. Поддерживаются teacher/student/both, dry-run, RAG grounding и Quality Gate. См. `docs/PEDAGOGY_CORE_V1_0.md`.
 
+Профессиональный lesson v2 включает подробный рассказ учителя, опорные записи,
+вопросы учеников с ответами, коррекцию типичных ошибок и три варианта проведения
+одного урока. Контракт и критерии: `docs/PROFESSIONAL_LESSON_SPEC.md`.
+
 
 ## Production Output Layer v1.1
 

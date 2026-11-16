@@ -22,6 +22,12 @@ SUBJECT_LABELS = {
     "INDIVIDUAL_PROJECT": "Индивидуальный проект",
 }
 
+LESSON_VARIANT_LABELS = {
+    "teacher_explanation": "Объяснение учителя с управляемым диалогом",
+    "textbook_independent": "Самостоятельная работа с учебником",
+    "group_work": "Групповая работа",
+}
+
 
 def _set_cell_shading(cell, fill: str):
     tc_pr = cell._tc.get_or_add_tcPr()
@@ -195,7 +201,43 @@ class DocxArtifactRenderer:
         self._bullet_list(doc, a.get("measurable_outcomes", []))
         self._heading(doc, "Ключевые понятия")
         doc.add_paragraph(", ".join(a.get("key_concepts", [])) or "-")
-        self._heading(doc, "Ход урока")
+        alignment = a.get("fgos_alignment") or {}
+        if alignment:
+            self._heading(doc, "Методическая привязка к планируемым результатам")
+            self._info_box(doc, "Предметные результаты", alignment.get("subject_results", []))
+            self._heading(doc, "Метапредметные результаты", level=2)
+            self._bullet_list(doc, alignment.get("meta_subject_results", []))
+            self._heading(doc, "Личностные результаты", level=2)
+            self._bullet_list(doc, alignment.get("personal_results", []))
+            self._heading(doc, "Деятельность и свидетельства результата", level=2)
+            table = doc.add_table(rows=1, cols=2)
+            table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            headers = ["Деятельность учащихся", "Что проверяет учитель"]
+            for idx, label in enumerate(headers):
+                table.cell(0, idx).paragraphs[0].add_run(label).bold = True
+                _set_cell_shading(table.cell(0, idx), "D9E5F1")
+            activities = alignment.get("learning_activities", [])
+            evidence = alignment.get("assessment_evidence", [])
+            for idx in range(max(len(activities), len(evidence))):
+                row = table.add_row().cells
+                row[0].text = str(activities[idx]) if idx < len(activities) else ""
+                row[1].text = str(evidence[idx]) if idx < len(evidence) else ""
+                for cell in row:
+                    _set_cell_margins(cell)
+                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+            doc.add_paragraph()
+        if a.get("materials"):
+            self._heading(doc, "Материалы и подготовка")
+            self._bullet_list(doc, a["materials"])
+        recommended = a.get("recommended_variant")
+        if recommended:
+            self._info_box(
+                doc,
+                "Рекомендуемый вариант проведения",
+                [LESSON_VARIANT_LABELS.get(recommended, recommended)],
+                fill="E2F0D9",
+            )
+        self._heading(doc, "Базовый сценарий по минутам")
         for step in a.get("timeline", []):
             table = doc.add_table(rows=1, cols=2)
             table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -219,9 +261,104 @@ class DocxArtifactRenderer:
                 _set_cell_margins(cell)
                 cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
             doc.add_paragraph()
+        if a.get("teacher_narrative"):
+            self._heading(doc, "Подробный рассказ учителя и организация работы")
+            for block in a["teacher_narrative"]:
+                self._heading(doc, block.get("stage", "Смысловой блок"), level=2)
+                if block.get("purpose"):
+                    p = doc.add_paragraph()
+                    p.add_run("Задача этапа: ").bold = True
+                    p.add_run(block["purpose"])
+                for paragraph in block.get("teacher_script", []):
+                    doc.add_paragraph(str(paragraph))
+                if block.get("student_prompts"):
+                    self._info_box(
+                        doc,
+                        "Вопросы и реплики классу",
+                        block["student_prompts"],
+                        fill="EEF3F8",
+                    )
+                if block.get("board_notes"):
+                    self._info_box(
+                        doc,
+                        "На доску / слайд",
+                        block["board_notes"],
+                        fill="E2F0D9",
+                    )
+                if block.get("attention_points"):
+                    self._info_box(
+                        doc,
+                        "На что обратить внимание",
+                        block["attention_points"],
+                        fill="FFF4DB",
+                    )
         if a.get("notebook"):
             self._heading(doc, "В тетрадь")
             self._bullet_list(doc, a["notebook"])
+        if a.get("anticipated_student_questions"):
+            self._heading(doc, "Возможные вопросы учеников и ответы")
+            for index, item in enumerate(a["anticipated_student_questions"], start=1):
+                p = doc.add_paragraph()
+                p.add_run(f"{index}. {item.get('question', '')}").bold = True
+                p = doc.add_paragraph()
+                p.add_run("Короткий ответ: ").bold = True
+                p.add_run(item.get("short_answer", ""))
+                p = doc.add_paragraph()
+                p.add_run("Развёрнутый ответ: ").bold = True
+                p.add_run(item.get("expanded_answer", ""))
+                if audience == "teacher" and item.get("teaching_note"):
+                    self._info_box(
+                        doc,
+                        "Методическая подсказка",
+                        [item["teaching_note"]],
+                        fill="FFF4DB",
+                    )
+        if audience == "teacher" and a.get("misconception_support"):
+            self._heading(doc, "Типичные ошибки: диагностика и коррекция")
+            for item in a["misconception_support"]:
+                self._heading(doc, item.get("misconception", "Типичная ошибка"), level=2)
+                rows = [
+                    ("Диагностический вопрос", item.get("diagnostic_question", "")),
+                    ("Как скорректировать", item.get("correction", "")),
+                    ("Пример / контрпример", item.get("example_or_counterexample", "")),
+                ]
+                table = doc.add_table(rows=0, cols=2)
+                table.alignment = WD_TABLE_ALIGNMENT.CENTER
+                for label, value in rows:
+                    cells = table.add_row().cells
+                    cells[0].paragraphs[0].add_run(label).bold = True
+                    cells[1].text = str(value)
+                    _set_cell_shading(cells[0], "D9E5F1")
+                    for cell in cells:
+                        _set_cell_margins(cell)
+                        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+                doc.add_paragraph()
+        if audience == "teacher" and a.get("lesson_variants"):
+            self._heading(doc, "Три варианта проведения урока")
+            for variant in a["lesson_variants"]:
+                label = variant.get("title") or LESSON_VARIANT_LABELS.get(
+                    variant.get("approach"), variant.get("approach", "Вариант")
+                )
+                self._heading(doc, label, level=2)
+                p = doc.add_paragraph()
+                p.add_run("Когда выбирать: ").bold = True
+                p.add_run(variant.get("when_to_use", ""))
+                self._info_box(doc, "Подготовка", variant.get("preparation", []))
+                self._heading(doc, "Последовательность", level=2)
+                self._numbered_list(doc, variant.get("steps", []))
+                p = doc.add_paragraph()
+                p.add_run("Свидетельство результата: ").bold = True
+                p.add_run(variant.get("evidence_of_learning", ""))
+                if variant.get("risks_and_mitigation"):
+                    self._info_box(
+                        doc,
+                        "Риски и предупреждение",
+                        variant["risks_and_mitigation"],
+                        fill="FFF4DB",
+                    )
+        if audience == "teacher" and a.get("methodical_notes"):
+            self._heading(doc, "Методические акценты")
+            self._bullet_list(doc, a["methodical_notes"])
         if a.get("differentiation"):
             self._heading(doc, "Дифференциация")
             self._bullet_list(doc, a["differentiation"])

@@ -483,6 +483,16 @@ async def run_smoke(output_dir: Path) -> None:
             with zipfile.ZipFile(io.BytesIO(lesson_download.content)) as archive:
                 lesson_xml = archive.read("word/document.xml").decode("utf-8")
             require("Социальные институты" in lesson_xml, "Lesson DOCX has the wrong topic")
+            for required_section in (
+                "Подробный рассказ учителя и организация работы",
+                "Возможные вопросы учеников и ответы",
+                "Три варианта проведения урока",
+                "Методическая привязка к планируемым результатам",
+            ):
+                require(
+                    required_section in lesson_xml,
+                    f"Professional lesson section is missing: {required_section}",
+                )
 
         from app.models.entities import GenerationRun
 
@@ -497,6 +507,20 @@ async def run_smoke(output_dir: Path) -> None:
                 "Lesson export owner was not persisted",
             )
             require(bool((run.quality_report or {}).get("passed")), "Persisted quality gate failed")
+            quality_checks = {
+                item.get("code"): item.get("passed")
+                for item in (run.quality_report or {}).get("checks", [])
+            }
+            for required_check in (
+                "fgos_operational_alignment",
+                "professional_teacher_narrative",
+                "anticipated_student_questions",
+                "three_lesson_variants",
+            ):
+                require(
+                    quality_checks.get(required_check) is True,
+                    f"Professional quality check failed: {required_check}",
+                )
             manifest = run.source_manifest or []
             require(bool(manifest), "Lesson has no textbook source manifest")
             require(

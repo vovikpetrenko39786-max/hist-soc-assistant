@@ -48,6 +48,10 @@ class PilotAccessMiddleware(BaseMiddleware):
         # Group chats would expose generated documents to all group members.
         if event.chat.type != "private":
             return None
+        # Safe onboarding exception: the command reveals only the sender's own
+        # Telegram ID and cannot access courses, the backend, or generated files.
+        if (getattr(event, "text", None) or "").strip().casefold().startswith("/whoami"):
+            return await handler(event, data)
         user = event.from_user
         if user is None or user.id not in self.allowed_ids:
             await event.answer(
@@ -179,6 +183,7 @@ async def cmd_whoami(message: Message):
 
 
 @router.message(Command("courses"))
+@router.message(F.text == "🧭 Мои курсы")
 async def cmd_courses(message: Message, state: FSMContext):
     choices = choices_for_user(course_bindings, message.from_user.id if message.from_user else None)
     if not choices:

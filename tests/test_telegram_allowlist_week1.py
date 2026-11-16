@@ -38,6 +38,21 @@ async def test_unauthorized_private_user_cannot_invoke_handler():
 
 
 @pytest.mark.asyncio
+async def test_whoami_is_safe_before_allowlist_enrollment():
+    handler = AsyncMock(return_value="own-id")
+    event = SimpleNamespace(
+        chat=SimpleNamespace(type="private"),
+        from_user=SimpleNamespace(id=999),
+        text="/whoami",
+        answer=AsyncMock(),
+    )
+    response = await PilotAccessMiddleware(frozenset({123}))(handler, event, {})
+    assert response == "own-id"
+    handler.assert_awaited_once()
+    event.answer.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_authorized_user_private_chat_works():
     handler = AsyncMock(return_value="ok")
     event = SimpleNamespace(

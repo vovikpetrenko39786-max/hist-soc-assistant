@@ -43,6 +43,49 @@ class LessonTimelineStep(BaseModel):
     evidence_of_learning: str | None = None
 
 
+class LessonFgosAlignment(BaseModel):
+    """Operational alignment for a teachable lesson, not a compliance claim."""
+
+    subject_results: list[str]
+    meta_subject_results: list[str]
+    personal_results: list[str]
+    learning_activities: list[str]
+    assessment_evidence: list[str]
+
+
+class TeacherNarrativeBlock(BaseModel):
+    stage: str
+    purpose: str
+    teacher_script: list[str]
+    student_prompts: list[str]
+    board_notes: list[str]
+    attention_points: list[str]
+
+
+class AnticipatedStudentQuestion(BaseModel):
+    question: str
+    short_answer: str
+    expanded_answer: str
+    teaching_note: str
+
+
+class MisconceptionSupport(BaseModel):
+    misconception: str
+    diagnostic_question: str
+    correction: str
+    example_or_counterexample: str
+
+
+class LessonVariant(BaseModel):
+    approach: Literal["teacher_explanation", "textbook_independent", "group_work"]
+    title: str
+    when_to_use: str
+    preparation: list[str]
+    steps: list[str]
+    evidence_of_learning: str
+    risks_and_mitigation: list[str]
+
+
 class SourceReference(BaseModel):
     chunk_id: str
     source_id: str
@@ -69,6 +112,17 @@ class LessonArtifact(BaseModel):
     key_concepts: list[str]
 
     timeline: list[LessonTimelineStep]
+
+    fgos_alignment: LessonFgosAlignment
+    materials: list[str]
+    teacher_narrative: list[TeacherNarrativeBlock]
+    anticipated_student_questions: list[AnticipatedStudentQuestion]
+    misconception_support: list[MisconceptionSupport]
+    lesson_variants: list[LessonVariant]
+    recommended_variant: Literal[
+        "teacher_explanation", "textbook_independent", "group_work"
+    ]
+    methodical_notes: list[str]
 
     notebook: list[str] = Field(default_factory=list)
     differentiation: list[str] = Field(default_factory=list)

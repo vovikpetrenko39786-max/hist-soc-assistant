@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # "template" is deterministic and offline for tests/demo.
     # "http" calls a compatible chat-completions-style endpoint.
     generation_provider: str = "template"
-    generation_model: str = "template-lesson-v1"
+    generation_model: str = "template-lesson-v2-professional"
     generation_http_base_url: str | None = None
     generation_http_api_key: str | None = None
     generation_http_model: str | None = None

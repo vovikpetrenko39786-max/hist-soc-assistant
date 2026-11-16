@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import zipfile
 
 from app.schemas.generation import (
     LessonArtifact,
@@ -8,6 +9,8 @@ from app.schemas.generation import (
 )
 from app.services.generation_context import GroundedContextBuilder
 from app.services.llm_provider import HttpLessonProvider, TemplateLessonProvider
+from app.services.docx_renderer import DocxArtifactRenderer
+from app.services.output_templates import OutputTemplateRegistry
 from app.services.quality_gate import LessonQualityGate
 
 
@@ -152,6 +155,34 @@ def test_template_provider_returns_valid_artifact():
     assert artifact.title == "Социальные институты"
     assert sum(x.minutes for x in artifact.timeline) == 45
     assert artifact.source_references
+    assert len(artifact.teacher_narrative) >= 3
+    assert len(artifact.anticipated_student_questions) >= 3
+    assert {item.approach for item in artifact.lesson_variants} == {
+        "teacher_explanation", "textbook_independent", "group_work"
+    }
+    assert artifact.fgos_alignment.subject_results == artifact.measurable_outcomes
+
+
+def test_professional_lesson_docx_contains_methodical_sections(tmp_path):
+    context = GroundedContextBuilder().build_lesson_context(
+        request(), topic_card(), retrieval()
+    )
+    raw = asyncio.run(TemplateLessonProvider().generate_lesson(context))
+    raw["artifact_type"] = "lesson"
+    path = tmp_path / "professional-lesson.docx"
+    DocxArtifactRenderer(OutputTemplateRegistry.get("school_clean")).render(
+        raw, "teacher", path
+    )
+    with zipfile.ZipFile(path) as archive:
+        xml = archive.read("word/document.xml").decode("utf-8")
+    for heading in (
+        "Методическая привязка к планируемым результатам",
+        "Подробный рассказ учителя и организация работы",
+        "Возможные вопросы учеников и ответы",
+        "Три варианта проведения урока",
+        "В тетрадь",
+    ):
+        assert heading in xml
 
 
 def test_quality_gate_passes_template_artifact():
@@ -184,6 +215,25 @@ def test_quality_gate_rejects_invented_source():
     assert report["passed"] is False
     assert any(
         x["code"] == "source_subset" and not x["passed"]
+        for x in report["checks"]
+    )
+
+
+def test_quality_gate_rejects_outline_without_professional_narrative():
+    card = topic_card()
+    context = GroundedContextBuilder().build_lesson_context(
+        request(), card, retrieval()
+    )
+    artifact = LessonArtifact.model_validate(
+        asyncio.run(TemplateLessonProvider().generate_lesson(context))
+    )
+    artifact.teacher_narrative = []
+    report = LessonQualityGate().evaluate(
+        artifact, card, context["source_manifest"]
+    )
+    assert report["passed"] is False
+    assert any(
+        x["code"] == "professional_teacher_narrative" and not x["passed"]
         for x in report["checks"]
     )
 

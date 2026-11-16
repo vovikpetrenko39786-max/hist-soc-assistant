@@ -77,6 +77,133 @@ class LessonQualityGate:
             else "Рефлексия отсутствует.",
         )
 
+        alignment = artifact.fgos_alignment
+        alignment_complete = all(
+            (
+                alignment.subject_results,
+                alignment.meta_subject_results,
+                alignment.personal_results,
+                alignment.learning_activities,
+                alignment.assessment_evidence,
+            )
+        )
+        add(
+            "fgos_operational_alignment",
+            alignment_complete,
+            "error",
+            "Результаты связаны с деятельностью и наблюдаемой проверкой."
+            if alignment_complete
+            else "Методическая привязка результатов, деятельности и проверки неполна.",
+        )
+
+        planned_results = {
+            str(item).strip().casefold() for item in artifact.measurable_outcomes
+        }
+        aligned_results = {
+            str(item).strip().casefold() for item in alignment.subject_results
+        }
+        add(
+            "subject_result_alignment",
+            bool(planned_results & aligned_results),
+            "error",
+            "Предметный результат согласован с планом урока."
+            if planned_results & aligned_results
+            else "Предметные результаты в методической привязке расходятся с планом урока.",
+        )
+
+        narrative_text = " ".join(
+            str(value)
+            for block in artifact.teacher_narrative
+            for value in (
+                block.teacher_script
+                + block.student_prompts
+                + block.board_notes
+                + block.attention_points
+            )
+        ).strip()
+        narrative_ok = len(artifact.teacher_narrative) >= 3 and len(narrative_text) >= 1200
+        add(
+            "professional_teacher_narrative",
+            narrative_ok,
+            "error",
+            f"Рассказ учителя содержателен: {len(artifact.teacher_narrative)} блока, {len(narrative_text)} знаков."
+            if narrative_ok
+            else "Нужен подробный предметный рассказ учителя минимум в трёх смысловых блоках.",
+        )
+
+        questions_ok = (
+            len(artifact.anticipated_student_questions) >= 3
+            and all(
+                len(item.short_answer.strip()) >= 20
+                and len(item.expanded_answer.strip()) >= 60
+                and len(item.teaching_note.strip()) >= 20
+                for item in artifact.anticipated_student_questions
+            )
+        )
+        add(
+            "anticipated_student_questions",
+            questions_ok,
+            "error",
+            "Предусмотрены реалистичные вопросы учеников, ответы и подсказки учителю."
+            if questions_ok
+            else "Недостаточно проработаны возможные вопросы учеников и ответы на них.",
+        )
+
+        misconception_ok = bool(artifact.misconception_support) and all(
+            item.diagnostic_question.strip()
+            and item.correction.strip()
+            and item.example_or_counterexample.strip()
+            for item in artifact.misconception_support
+        )
+        add(
+            "misconception_support",
+            misconception_ok,
+            "error",
+            "Есть диагностика и коррекция типичных ошибок."
+            if misconception_ok
+            else "Нет полноценной поддержки по типичным ошибкам.",
+        )
+
+        required_variants = {
+            "teacher_explanation", "textbook_independent", "group_work"
+        }
+        present_variants = {item.approach for item in artifact.lesson_variants}
+        variants_ok = required_variants.issubset(present_variants) and all(
+            len(item.steps) >= 4
+            and bool(item.evidence_of_learning.strip())
+            and bool(item.risks_and_mitigation)
+            for item in artifact.lesson_variants
+        )
+        add(
+            "three_lesson_variants",
+            variants_ok,
+            "error",
+            "Есть три полноценных варианта проведения с общей проверкой результата."
+            if variants_ok
+            else "Нужны три варианта: объяснение, самостоятельная работа с учебником и групповая работа.",
+        )
+
+        notebook_ok = len(artifact.notebook) >= 2 and all(
+            str(item).strip() for item in artifact.notebook
+        )
+        add(
+            "notebook_ready",
+            notebook_ok,
+            "error",
+            "Опорная запись для тетради готова."
+            if notebook_ok
+            else "Запись в тетрадь должна содержать минимум два содержательных пункта.",
+        )
+
+        add(
+            "methodical_notes",
+            len(artifact.methodical_notes) >= 2,
+            "error",
+            "Есть методические акценты для проведения урока."
+            if len(artifact.methodical_notes) >= 2
+            else "Недостаточно методических акцентов для учителя.",
+        )
+
         # Preserve the established quality-report contract while the stricter
         # validator below checks source identity and quote permissions too.
         allowed_chunks = {

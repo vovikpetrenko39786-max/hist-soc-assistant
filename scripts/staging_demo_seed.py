@@ -23,6 +23,14 @@ GRADE_ID = uuid.UUID("e6b0c580-e44c-4a36-a4f6-389c04dc87f1")
 CURRICULUM_ID = uuid.UUID("d7656931-393d-432c-949a-06639f5ee93f")
 UNIT_ID = uuid.UUID("f6794183-63ac-45cd-920a-784a523491de")
 TOPIC_ID = uuid.UUID("6e5d6fd4-8541-440e-883b-947589978b0d")
+OUTCOME_ID = uuid.UUID("4f2747c0-fb7e-4fc0-8a61-70ea319c5cc8")
+TOPIC_OUTCOME_ID = uuid.UUID("2d962cef-f09d-4ff9-9e80-8c9150d75bb8")
+INSTITUTION_CONCEPT_ID = uuid.UUID("501b9a9e-c019-4437-b293-cb6c31243dcc")
+TOPIC_INSTITUTION_CONCEPT_ID = uuid.UUID("4c7a9730-1146-4347-97ab-6d092f0301d1")
+FUNCTION_CONCEPT_ID = uuid.UUID("34b6ff1e-30c6-432b-8513-ebadcb3338d1")
+TOPIC_FUNCTION_CONCEPT_ID = uuid.UUID("ff256eba-408e-4e88-9284-9aa42ff9f983")
+EXPLAIN_SKILL_ID = uuid.UUID("b22018bd-e500-4336-ac82-61fd81140675")
+TOPIC_EXPLAIN_SKILL_ID = uuid.UUID("48cd56b1-f0df-463c-9384-10cb32efeb78")
 SOURCE_ID = uuid.UUID("5ae99b34-4097-4767-88f5-e3b317a12962")
 TOPIC_SOURCE_ID = uuid.UUID("31bdbb46-d74d-474d-8e2f-dbec5d922c29")
 CHUNK_ID = uuid.UUID("2451c69b-f141-45f6-a4d8-903db67b2f0e")
@@ -53,18 +61,24 @@ async def add_if_missing(session, model, identifier: uuid.UUID, **values) -> boo
     return True
 
 
-async def seed() -> int:
+async def seed() -> tuple[int, int]:
     validate_staging_environment(os.environ)
 
     import app.models  # noqa: F401
     from app.db.base import Base
     from app.db.session import SessionLocal, engine
     from app.models.catalog import (
+        Concept,
         Curriculum,
         CurriculumUnit,
         GradeLevel,
+        LearningOutcome,
+        Skill,
         Subject,
         Topic,
+        TopicConcept,
+        TopicOutcome,
+        TopicSkill,
         TopicSource,
     )
     from app.models.entities import (
@@ -83,6 +97,7 @@ async def seed() -> int:
         await connection.run_sync(Base.metadata.create_all)
 
     created = 0
+    updated = 0
     async with SessionLocal() as session:
         created += await add_if_missing(
             session,
@@ -160,10 +175,150 @@ async def seed() -> int:
                 "Как социальные институты упорядочивают общественную жизнь?"
             ],
             common_examples=["семья", "образование", "государство", "религия"],
+            counterexamples=[
+                "разовая очередь в магазине без устойчивых ролей и норм",
+                "случайная компания людей, собравшаяся один раз",
+            ],
+            typical_misconceptions=[
+                "Социальный институт — это только конкретная организация или здание.",
+                "Любая группа людей автоматически является социальным институтом.",
+            ],
+            default_lesson_blueprint={
+                "recommended_activities": [
+                    "различение института и организации",
+                    "анализ функций на конкретных примерах",
+                    "классификация примеров и контрпримеров",
+                ],
+            },
+            reflection_patterns=[
+                "Как изменилось ваше объяснение роли социальных институтов?"
+            ],
+            assessment_skills=[
+                "раскрывать смысл понятия",
+                "приводить и объяснять пример",
+                "различать близкие понятия",
+            ],
             derivation_status="verified",
             verification_status="verified",
             review_status="verified",
             metadata_json={"synthetic": True},
+        )
+        topic_row = await session.get(Topic, TOPIC_ID)
+        if not topic_row or not (topic_row.metadata_json or {}).get("synthetic"):
+            raise RuntimeError("Refusing to update a non-synthetic presentation topic")
+        topic_profile = {
+            "content_summary": (
+                "Социальные институты — устойчивые формы организации совместной "
+                "деятельности, закрепляющие нормы, статусы и роли. Они удовлетворяют "
+                "значимые общественные потребности: семья обеспечивает первичную "
+                "социализацию, образование передаёт знания и культурный опыт, "
+                "государство организует публичную власть и поддерживает порядок."
+            ),
+            "essential_questions": [
+                "Как социальные институты упорядочивают общественную жизнь?"
+            ],
+            "common_examples": ["семья", "образование", "государство", "религия"],
+            "counterexamples": [
+                "разовая очередь в магазине без устойчивых ролей и норм",
+                "случайная компания людей, собравшаяся один раз",
+            ],
+            "typical_misconceptions": [
+                "Социальный институт — это только конкретная организация или здание.",
+                "Любая группа людей автоматически является социальным институтом.",
+            ],
+            "default_lesson_blueprint": {
+                "recommended_activities": [
+                    "различение института и организации",
+                    "анализ функций на конкретных примерах",
+                    "классификация примеров и контрпримеров",
+                ],
+            },
+            "reflection_patterns": [
+                "Как изменилось ваше объяснение роли социальных институтов?"
+            ],
+            "assessment_skills": [
+                "раскрывать смысл понятия",
+                "приводить и объяснять пример",
+                "различать близкие понятия",
+            ],
+        }
+        for field, value in topic_profile.items():
+            if getattr(topic_row, field) != value:
+                setattr(topic_row, field, value)
+                updated += 1
+        created += await add_if_missing(
+            session,
+            LearningOutcome,
+            OUTCOME_ID,
+            subject_id=SUBJECT_ID,
+            grade_level_id=GRADE_ID,
+            outcome_type="subject",
+            outcome_subtype="concept_application",
+            text=(
+                "Характеризовать социальные институты, раскрывать их функции "
+                "и объяснять проявление институтов на конкретных примерах."
+            ),
+            source_reference="synthetic presentation curriculum",
+            review_status="verified",
+        )
+        created += await add_if_missing(
+            session,
+            TopicOutcome,
+            TOPIC_OUTCOME_ID,
+            topic_id=TOPIC_ID,
+            outcome_id=OUTCOME_ID,
+            priority=1,
+        )
+        created += await add_if_missing(
+            session,
+            Concept,
+            INSTITUTION_CONCEPT_ID,
+            subject_id=SUBJECT_ID,
+            term="социальный институт",
+            definition_reference="Демонстрационный учебник, раздел «Социальные институты»",
+            notes="Синтетическое демонстрационное понятие",
+        )
+        created += await add_if_missing(
+            session,
+            TopicConcept,
+            TOPIC_INSTITUTION_CONCEPT_ID,
+            topic_id=TOPIC_ID,
+            concept_id=INSTITUTION_CONCEPT_ID,
+            importance="required",
+        )
+        created += await add_if_missing(
+            session,
+            Concept,
+            FUNCTION_CONCEPT_ID,
+            subject_id=SUBJECT_ID,
+            term="функции социального института",
+            definition_reference="Демонстрационный учебник, раздел «Социальные институты»",
+            notes="Синтетическое демонстрационное понятие",
+        )
+        created += await add_if_missing(
+            session,
+            TopicConcept,
+            TOPIC_FUNCTION_CONCEPT_ID,
+            topic_id=TOPIC_ID,
+            concept_id=FUNCTION_CONCEPT_ID,
+            importance="required",
+        )
+        created += await add_if_missing(
+            session,
+            Skill,
+            EXPLAIN_SKILL_ID,
+            code="demo_explain_social_institution",
+            name="Объяснять понятие и обосновывать пример",
+            category="subject_reasoning",
+            description="Выделить признак, привести пример и объяснить связь.",
+        )
+        created += await add_if_missing(
+            session,
+            TopicSkill,
+            TOPIC_EXPLAIN_SKILL_ID,
+            topic_id=TOPIC_ID,
+            skill_id=EXPLAIN_SKILL_ID,
+            priority=1,
         )
         created += await add_if_missing(
             session,
@@ -264,14 +419,15 @@ async def seed() -> int:
         await session.commit()
 
     await engine.dispose()
-    return created
+    return created, updated
 
 
 async def main() -> None:
-    created = await seed()
+    created, updated = await seed()
     print(
         "PASS: synthetic presentation dataset ready; "
-        f"created={created}; class_course_id={CLASS_COURSE_ID}; source_key={DEMO_SOURCE_KEY}"
+        f"created={created}; updated={updated}; "
+        f"class_course_id={CLASS_COURSE_ID}; source_key={DEMO_SOURCE_KEY}"
     )
 
 
