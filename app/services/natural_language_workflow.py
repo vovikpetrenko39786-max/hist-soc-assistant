@@ -1,26 +1,32 @@
 from __future__ import annotations
 
+import logging
 import re
+import uuid
 from dataclasses import dataclass
 
+from app.models.entities import GenerationRun
+from app.schemas.output import OutputRenderRequest
 from app.schemas.pedagogy import (
     AssessmentSpec,
+    HomeworkSpec,
     PedagogyGenerationRequest,
     WorksheetSpec,
-    HomeworkSpec,
 )
-from app.schemas.output import OutputRenderRequest
 from app.schemas.workflow import (
     NaturalWorkflowRequest,
     ParsedArtifact,
     WorkflowPlan,
 )
+from app.services.course_source_policy import select_primary_source
+from app.services.memory import MemoryService
 from app.services.output_service import OutputRenderError, OutputService
 from app.services.pedagogy_generation import (
     PedagogyGenerationError,
     PedagogyGenerationService,
 )
 
+logger = logging.getLogger(__name__)
 
 _ARTIFACT_PATTERNS = {
     "lesson": (
@@ -304,13 +310,22 @@ class NaturalLanguageParser:
             knowledge_policy = "library_first"
             web_allowed = request.allow_web_fallback
 
+        # A source_key is an explicit choice of evidence source even if the
+        # prompt does not contain the words "only from this textbook".
+        # Empty/whitespace identifiers are not valid selections.
+        selected_source = (request.source_key or "").strip() or None
+        strict_source = strict_source or bool(selected_source)
+        if strict_source:
+            knowledge_policy = "library_only"
+            web_allowed = False
+
         # Topic extraction.
         topic = self._extract_topic(raw, low, subject, grade)
         if topic:
             confidence_parts.append(1.0)
         else:
             confidence_parts.append(0.0)
-            if not any(x in artifact_types for x in {"idea_enhancement", "informational"}):
+            if not any(x in artifact_types for x in ("idea_enhancement", "informational")):
                 notes.append("Не удалось надёжно выделить тему из свободного текста.")
 
         confidence = sum(confidence_parts) / len(confidence_parts)
@@ -328,7 +343,7 @@ class NaturalLanguageParser:
             formats=formats,
             template_name=request.template_name,
             strict_source=strict_source,
-            source_key=None,
+            source_key=selected_source,
             assessment_task_count=assessment_task_count,
             assessment_max_points=assessment_max_points,
             knowledge_policy=knowledge_policy,
@@ -359,13 +374,25 @@ class NaturalLanguageParser:
             )[0]
             return _normalize_topic(candidate)
 
-        # 2. Quoted phrase is often the topic.
+        # 2. Explicit action followed by a colon:
+        # "Сделай урок: социальные институты".
+        m = re.search(
+            r"(?:сделай|подготовь|создай|составь|разработай)\s+"
+            r"(?:урок|конспект|рабочий лист|проверочн\w*|домашнее задание)\s*"
+            r"[:—–-]\s*[«\"]?([^»\"\n.]+)[»\"]?",
+            raw,
+            flags=re.IGNORECASE,
+        )
+        if m:
+            return _normalize_topic(m.group(1))
+
+        # 3. Quoted phrase is often the topic.
         quoted = re.findall(r"[«\"]([^»\"]{3,120})[»\"]", raw)
         for item in quoted:
             if not any(x in item.casefold() for x in ("учитель", "ученик", "word", "pdf")):
                 return _normalize_topic(item)
 
-        # 3. Comma-separated teacher shorthand:
+        # 4. Comma-separated teacher shorthand:
         # "10 класс, обществознание, социальные институты. Сделай..."
         first_sentence = re.split(r"[.!?]\s*", raw, maxsplit=1)[0]
         parts = [p.strip() for p in re.split(r"[,;]", first_sentence) if p.strip()]
@@ -394,7 +421,7 @@ class NaturalLanguageParser:
             # Prefer first plausible content phrase after class/subject.
             return cleaned[0]
 
-        # 4. Subject-following phrase:
+        # 5. Subject-following phrase:
         subject_words = []
         if subject == "SOCIAL_STUDIES":
             subject_words = ["обществознание", "обществознания", "общество"]
@@ -429,14 +456,116 @@ class NaturalLanguageWorkflowService:
         self.parser = NaturalLanguageParser()
         self.generator = PedagogyGenerationService()
         self.output = OutputService()
+        self.memory = MemoryService()
 
     def preview(self, request: NaturalWorkflowRequest) -> WorkflowPlan:
         return self.parser.parse(request)
 
-    async def run(self, session, request: NaturalWorkflowRequest) -> dict:
+    async def run(
+        self,
+        session,
+        request: NaturalWorkflowRequest,
+        *,
+        owner_principal: str | None = None,
+    ) -> dict:
         plan = self.parser.parse(request)
         warnings = list(plan.notes)
         results = []
+        course_context = None
+        if request.class_course_id:
+            try:
+                course_context = await self.memory.build_class_course_context(
+                    session, request.class_course_id
+                )
+            except LookupError:
+                return {
+                    "status": "planned", "plan": plan.model_dump(mode="json"),
+                    "results": [], "warnings": warnings,
+                    "summary": "Курс класса не найден. Выберите существующий курс.",
+                }
+            # The class/subject in the message must be consistent with the
+            # explicit course ID. Never mix progress from different classes.
+            normalize = lambda value: re.sub(r"[\s\-–—]", "", str(value)).casefold().replace("ё", "е")
+            if ((plan.class_label and normalize(plan.class_label) != normalize(course_context.get("class_label", "")))
+                or (plan.grade and plan.grade != course_context.get("grade"))
+                or (plan.subject and plan.subject.casefold() != str(course_context.get("subject", "")).casefold())):
+                return {
+                    "status": "planned", "plan": plan.model_dump(mode="json"),
+                    "results": [], "warnings": warnings,
+                    "summary": "Курс не соответствует классу или предмету в запросе. Генерация остановлена.",
+                }
+            try:
+                selected_key = select_primary_source(
+                    plan.source_key,
+                    course_context.get("primary_source_key"),
+                    any(x.artifact_type not in {"informational", "idea_enhancement"}
+                        for x in plan.artifacts),
+                )
+            except ValueError:
+                return {
+                    "status": "planned", "plan": plan.model_dump(mode="json"),
+                    "results": [], "warnings": warnings,
+                    "summary": (
+                        "Выбранный учебник не совпадает с учебником курса. "
+                        "Уточните настройки источника. Генерация остановлена."
+                    ),
+                }
+            if selected_key and selected_key != plan.source_key:
+                plan.source_key = selected_key
+                plan.strict_source = True
+                plan.knowledge_policy = "library_only"
+                plan.web_fallback_allowed = False
+                warnings.append("Источник взят из сохранённого учебника курса.")
+            if not plan.subject:
+                plan.subject = course_context.get("subject")
+            if not plan.grade:
+                plan.grade = course_context.get("grade")
+            if not plan.level:
+                plan.level = course_context.get("course_level")
+            if not plan.class_label:
+                plan.class_label = course_context.get("class_label")
+        is_next_lesson = bool(re.search(r"\bследующ\w*\s+урок\w*", request.message.casefold()))
+        if is_next_lesson:
+            # The parser may mistake generic wording for a concrete topic.
+            # Use ONLY an explicitly saved next_step, not the old topic.
+            next_step = (course_context or {}).get("last_lesson") or {}
+            next_step = next_step.get("next_step")
+            if (not next_step or not isinstance(next_step, str)
+                    or not 3 <= len(next_step.strip()) <= 140 or "\n" in next_step):
+                return {
+                    "status": "planned", "plan": plan.model_dump(mode="json"),
+                    "results": [], "warnings": warnings,
+                    "summary": (
+                        "Следующая тема не подтверждена в журнале курса. "
+                        "Укажите тему явно или сохраните next_step после урока."
+                    ),
+                }
+            plan.topic = next_step.strip()
+            warnings.append("Тема следующего урока взята из подтверждённого next_step.")
+        # Never pass the entire class record to the LLM: free-form reflections
+        # and class notes may contain identifiable student information.
+        llm_course_context = None
+        if course_context:
+            last_lesson = course_context.get("last_lesson") or {}
+            progress = course_context.get("progress") or {}
+            llm_course_context = {
+                "class_label": course_context.get("class_label"),
+                "grade": course_context.get("grade"),
+                "subject": course_context.get("subject"),
+                "course_level": course_context.get("course_level"),
+                "last_lesson": {
+                    "date": last_lesson.get("date"),
+                    "topic": last_lesson.get("topic"),
+                    "status": last_lesson.get("status"),
+                    "next_step": last_lesson.get("next_step"),
+                },
+                "progress": {
+                    "unit": progress.get("unit"),
+                    "topic": progress.get("topic"),
+                    "subtopic": progress.get("subtopic"),
+                    "status": progress.get("status"),
+                },
+            }
 
         # IDEA Enhancer and informational requests can work without curriculum topic.
         normal_artifacts = [
@@ -461,6 +590,27 @@ class NaturalLanguageWorkflowService:
                 "warnings": warnings,
             }
 
+        if plan.strict_source and not plan.source_key:
+            return {
+                "status": "planned",
+                "plan": plan.model_dump(mode="json"),
+                "results": [],
+                "summary": ("Для строгой работы по учебнику необходимо выбрать "
+                            "источник (source_key). Генерация остановлена."),
+                "warnings": warnings,
+            }
+        if plan.strict_source and any(
+            x.artifact_type in {"informational", "idea_enhancement"}
+            for x in plan.artifacts
+        ):
+            return {
+                "status": "planned",
+                "plan": plan.model_dump(mode="json"),
+                "results": [],
+                "summary": "Строгий режим не поддерживается для данного типа ответа.",
+                "warnings": warnings,
+            }
+
         for item in plan.artifacts:
             assessment = None
             if item.artifact_type == "assessment":
@@ -472,6 +622,7 @@ class NaturalLanguageWorkflowService:
             ped_request = PedagogyGenerationRequest(
                 artifact_type=item.artifact_type,
                 request_text=request.message,
+                course_context=llm_course_context,
                 subject=plan.subject,
                 grade=plan.grade,
                 level=plan.level,
@@ -483,7 +634,8 @@ class NaturalLanguageWorkflowService:
                     else None
                 ),
                 mode=plan.mode,
-                strict_source=False,  # strict source requires resolved source_key
+                source_key=plan.source_key,
+                strict_source=plan.strict_source,
                 include_exam_perspective=True,
                 knowledge_policy=plan.knowledge_policy,
                 allow_web_fallback=plan.web_fallback_allowed,
@@ -503,7 +655,7 @@ class NaturalLanguageWorkflowService:
 
             try:
                 generated = await self.generator.generate(session, ped_request)
-            except (PedagogyGenerationError, Exception) as exc:
+            except PedagogyGenerationError:
                 # Preserve partial workflow results rather than losing all previous artifacts.
                 results.append({
                     "artifact_type": item.artifact_type,
@@ -511,18 +663,47 @@ class NaturalLanguageWorkflowService:
                     "run_id": None,
                     "quality_score": None,
                     "files": [],
-                    "warnings": item_warnings + [str(exc)],
+                    "warnings": item_warnings + ["Во время генерации произошла внутренняя ошибка."],
+                })
+                continue
+            except Exception:
+                logger.exception("Unexpected pedagogy generation failure")
+                results.append({
+                    "artifact_type": item.artifact_type,
+                    "status": "failed",
+                    "run_id": None,
+                    "quality_score": None,
+                    "files": [],
+                    "warnings": item_warnings
+                    + ["Во время генерации произошла внутренняя ошибка."],
                 })
                 continue
 
             files = []
+            if generated.get("status") == "quality_failed":
+                item_warnings.append(
+                    "Материал не прошёл проверку качества и не отправлен как готовый файл."
+                )
             run_id = generated.get("run_id")
+            if run_id and session is not None:
+                run = await session.get(GenerationRun, run_id)
+                if run is not None:
+                    request_json = dict(run.request_json or {})
+                    if owner_principal:
+                        request_json["_owner_principal"] = owner_principal
+                    run.request_json = request_json
+                    if course_context:
+                        run.class_course_id = request.class_course_id
+                        teacher_id = course_context.get("teacher_id")
+                        if teacher_id:
+                            run.teacher_id = uuid.UUID(teacher_id)
+                    await session.commit()
             if (
                 request.auto_render
                 and not request.dry_run
                 and plan.formats
                 and run_id
-                and generated.get("status") in {"generated", "quality_failed"}
+                and generated.get("status") == "generated"
             ):
                 audiences = []
                 if item.audience in {"teacher", "both"}:
@@ -571,7 +752,7 @@ class NaturalLanguageWorkflowService:
             })
 
         successful = [x for x in results if x["status"] in {"generated", "dry_run"}]
-        failed = [x for x in results if x["status"] == "failed"]
+        failed = [x for x in results if x["status"] in {"failed", "quality_failed"}]
         if failed and successful:
             status = "partial"
         elif failed and not successful:

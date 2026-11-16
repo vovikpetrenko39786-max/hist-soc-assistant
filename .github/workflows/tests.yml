@@ -1,0 +1,76 @@
+name: Hist-Soc regression checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'integration/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hist-soc-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      APP_ENV: test
+      AUTO_CREATE_TABLES: "false"
+      DATABASE_URL: postgresql+asyncpg://ci:ci_test@127.0.0.1:5432/hist_soc_ci
+      GENERATION_PROVIDER: template
+      EMBEDDING_PROVIDER: hash
+      OPENAI_API_KEY: ""
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci_test
+          POSTGRES_DB: hist_soc_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d hist_soc_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+      - name: Compile Python
+        run: python -m compileall -q app telegram_bot tests scripts
+      - name: Static analysis
+        run: python -m ruff check --select F app telegram_bot tests scripts release_preflight.py
+      - name: Regression suite
+        run: python -m pytest -q
+      - name: Verify schema on isolated PostgreSQL + pgvector
+        run: python scripts/ci_db_schema_smoke.py
+      - name: Smoke-test authenticated DOCX export on isolated PostgreSQL
+        run: python scripts/ci_release_smoke.py
+      - name: Seed synthetic presentation dataset twice (idempotency)
+        env:
+          APP_ENV: staging
+          DEMO_SEED_ENABLED: "true"
+          DEMO_DATASET_ID: hist-soc-presentation-v1
+          RAILWAY_ENVIRONMENT_NAME: staging
+        run: |
+          python scripts/staging_demo_seed.py
+          python scripts/staging_demo_seed.py
+      - name: Rehearse isolated PostgreSQL and file backup restoration
+        run: python scripts/ci_restore_drill.py

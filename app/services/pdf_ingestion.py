@@ -5,7 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 import re
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
 
 
 @dataclass

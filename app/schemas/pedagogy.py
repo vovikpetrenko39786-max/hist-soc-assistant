@@ -3,6 +3,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.schemas.generation import (
+    AnticipatedStudentQuestion,
+    LessonFgosAlignment,
+    LessonVariant,
+    MisconceptionSupport,
+    TeacherNarrativeBlock,
+)
 
 ArtifactType = Literal["lesson", "assessment", "worksheet", "homework", "idea_enhancement", "informational"]
 Audience = Literal["teacher", "student", "both"]
@@ -76,6 +83,16 @@ class LessonArtifact(BaseModel):
     measurable_outcomes: list[str]
     key_concepts: list[str]
     timeline: list[LessonTimelineStep]
+    fgos_alignment: LessonFgosAlignment
+    materials: list[str]
+    teacher_narrative: list[TeacherNarrativeBlock]
+    anticipated_student_questions: list[AnticipatedStudentQuestion]
+    misconception_support: list[MisconceptionSupport]
+    lesson_variants: list[LessonVariant]
+    recommended_variant: Literal[
+        "teacher_explanation", "textbook_independent", "group_work"
+    ]
+    methodical_notes: list[str]
     notebook: list[str] = Field(default_factory=list)
     differentiation: list[str] = Field(default_factory=list)
     formative_check: list[str] = Field(default_factory=list)
@@ -169,6 +186,7 @@ class InformationalArtifact(BaseModel):
 class PedagogyGenerationRequest(BaseModel):
     artifact_type: ArtifactType
     request_text: str = Field(default="", max_length=12000)
+    course_context: dict | None = None  # Trusted server-side course memory only
     subject: str | None = None
     grade: int | None = Field(default=None, ge=1, le=11)
     level: str | None = None

@@ -11,6 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models.entities import ExportedFile, GenerationRun
 from app.services.docx_renderer import DocxArtifactRenderer
+from app.services.output_storage_guard import (
+    OutputStorageConfigurationError,
+    allocate_export_directory,
+    current_output_directory,
+    require_free_export_space,
+)
 from app.services.output_templates import OutputTemplateRegistry
 from app.services.pdf_export import PdfExporter, PdfExportError
 
@@ -44,6 +50,8 @@ class OutputService:
             )
             if run is None:
                 raise OutputRenderError("Generation run not found")
+            if run.status != "generated":
+                raise OutputRenderError("Generation run has not passed quality checks")
             bundle = run.output_json or {}
             artifact = bundle.get(request.audience)
             if not artifact:
@@ -62,9 +70,17 @@ class OutputService:
         audience_suffix = "teacher" if request.audience == "teacher" else "student"
         stem = f"{_slug(base)}_{audience_suffix}"
 
+        # One directory per rendering to avoid overwriting previously
+        # exported files, including repeated renders of the same run.
         run_part = str(run.id) if run else "inline"
-        out_dir = Path(settings.output_storage_dir) / run_part
-        out_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            base_dir = current_output_directory(settings)
+            require_free_export_space(
+                base_dir, minimum_free_mb=settings.output_min_free_mb
+            )
+        except OutputStorageConfigurationError as exc:
+            raise OutputRenderError(str(exc)) from exc
+        out_dir = allocate_export_directory(base_dir, run_part)
 
         renderer = DocxArtifactRenderer(template)
         files = []
