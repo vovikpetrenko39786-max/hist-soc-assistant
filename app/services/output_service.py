@@ -44,6 +44,8 @@ class OutputService:
             )
             if run is None:
                 raise OutputRenderError("Generation run not found")
+            if run.status != "generated":
+                raise OutputRenderError("Generation run has not passed quality checks")
             bundle = run.output_json or {}
             artifact = bundle.get(request.audience)
             if not artifact:
@@ -63,8 +65,11 @@ class OutputService:
         stem = f"{_slug(base)}_{audience_suffix}"
 
         run_part = str(run.id) if run else "inline"
-        out_dir = Path(settings.output_storage_dir) / run_part
-        out_dir.mkdir(parents=True, exist_ok=True)
+        output_root = Path(settings.output_storage_dir).resolve()
+        if output_root.parent == output_root:
+            raise OutputRenderError("Output storage must not be a filesystem root")
+        out_dir = output_root / run_part / uuid.uuid4().hex
+        out_dir.mkdir(parents=True, exist_ok=False)
 
         renderer = DocxArtifactRenderer(template)
         files = []

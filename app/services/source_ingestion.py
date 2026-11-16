@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 import re
-import shutil
 import uuid
 
 from fastapi import UploadFile
@@ -83,23 +82,42 @@ class SourceIngestionService:
         storage_root = self._storage_root()
         source_dir = storage_root / str(source.id)
         source_dir.mkdir(parents=True, exist_ok=True)
-        temp_path = source_dir / '.upload.tmp'
-        file_hash, size_bytes = await self._save_upload(upload, temp_path)
+        temp_path = source_dir / f'.upload-{uuid.uuid4().hex}.tmp'
+        try:
+            file_hash, size_bytes = await self._save_upload(upload, temp_path)
 
-        duplicate = await session.scalar(
-            select(Source).where(Source.file_hash == file_hash, Source.id != source.id)
-        )
-        if duplicate is not None:
-            temp_path.unlink(missing_ok=True)
-            raise DuplicateSourceFileError(duplicate.id)
+            duplicate = await session.scalar(
+                select(Source).where(Source.file_hash == file_hash, Source.id != source.id)
+            )
+            if duplicate is not None:
+                raise DuplicateSourceFileError(duplicate.id)
 
-        if source.file_hash and source.file_hash != file_hash and not replace:
-            temp_path.unlink(missing_ok=True)
-            raise SourceIngestionError('Source already has another file. Use replace=true to replace it.')
+            if source.file_hash and source.file_hash != file_hash and not replace:
+                raise SourceIngestionError(
+                    'Source already has another file. Use replace=true to replace it.'
+                )
 
-        final_name = f'{file_hash[:12]}_{self._safe_filename(original_name)}'
-        final_path = source_dir / final_name
-        temp_path.replace(final_path)
+            final_name = f'{file_hash[:12]}_{self._safe_filename(original_name)}'
+            final_path = source_dir / final_name
+            temp_path.replace(final_path)
+        finally:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except OSError:
+                # Cleanup failure must not replace the original ingestion error.
+                pass
+
+        source_id_value = source.id
+        had_active_file = bool(source.file_path or source.file_hash)
+        failed_run_data = {
+            'source_id': source_id_value,
+            'status': 'failed',
+            'original_filename': original_name,
+            'stored_file_path': str(final_path),
+            'file_hash': file_hash,
+            'file_size_bytes': size_bytes,
+            'extraction_method': 'pymupdf',
+        }
 
         run = SourceIngestionRun(
             source_id=source.id,
@@ -120,6 +138,12 @@ class SourceIngestionService:
             run.text_char_count = inspection.text_char_count
             run.pages_with_text = inspection.pages_with_text
             run.needs_ocr = inspection.needs_ocr
+            failed_run_data.update({
+                'page_count': inspection.page_count,
+                'text_char_count': inspection.text_char_count,
+                'pages_with_text': inspection.pages_with_text,
+                'needs_ocr': inspection.needs_ocr,
+            })
 
             if inspection.page_count == 0:
                 raise SourceIngestionError('PDF has no pages')
@@ -161,6 +185,7 @@ class SourceIngestionService:
                 await session.flush()
                 section_rows[sec.order_index] = row
             run.sections_created = len(section_rows)
+            failed_run_data['sections_created'] = len(section_rows)
 
             chunks = self.analyzer.make_chunks(inspection)
             for chunk in chunks:
@@ -182,6 +207,7 @@ class SourceIngestionService:
                     metadata_json={'ingestion_version': 'v0.7'},
                 ))
             run.chunks_created = len(chunks)
+            failed_run_data['chunks_created'] = len(chunks)
 
             source.file_path = str(final_path)
             source.file_hash = inspection.file_hash
@@ -216,11 +242,24 @@ class SourceIngestionService:
 
             return self._run_result(source, run)
         except Exception as exc:
-            run.status = 'failed'
-            run.error_message = str(exc)
-            run.completed_at = datetime.now(timezone.utc)
-            source.ingestion_status = 'failed'
-            await session.commit()
+            # Never commit derivative deletes or a partially built replacement.
+            await session.rollback()
+
+            failed_run = SourceIngestionRun(
+                **failed_run_data,
+                error_message=str(exc),
+                completed_at=datetime.now(timezone.utc),
+            )
+            try:
+                current_source = await session.get(Source, source_id_value)
+                if current_source is not None and not had_active_file:
+                    current_source.ingestion_status = 'failed'
+                session.add(failed_run)
+                await session.commit()
+            except Exception:
+                # Preserving the previous source/index is more important than
+                # masking the original failure with an audit-write failure.
+                await session.rollback()
             if isinstance(exc, SourceIngestionError):
                 raise
             raise SourceIngestionError(str(exc)) from exc
