@@ -1,0 +1,73 @@
+name: Hist-Soc migration checks
+
+on:
+  push:
+    branches:
+      - main
+      - "stage-2/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hist-soc-migrations-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      APP_ENV: test
+      AUTO_CREATE_TABLES: "false"
+      DATABASE_URL: postgresql+asyncpg://ci:ci_test@127.0.0.1:55433/hist_soc_migration_test
+      MIGRATION_TEST_DATABASE_URL: postgresql+asyncpg://ci:ci_test@127.0.0.1:55433/hist_soc_migration_test
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci_test
+          POSTGRES_DB: hist_soc_migration_test
+        ports:
+          - 55433:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d hist_soc_migration_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+      - name: Compile migration tools
+        run: >-
+          python -m compileall -q migrations
+          scripts/schema_inventory.py
+          scripts/ci_migration_smoke.py
+          tests/test_migration_foundation.py
+      - name: Static correctness checks
+        run: >-
+          python -m ruff check --select E9,F
+          migrations
+          scripts/schema_inventory.py
+          scripts/ci_migration_smoke.py
+          tests/test_migration_foundation.py
+      - name: Unit migration safeguards
+        run: python -m pytest -q tests/test_migration_foundation.py
+      - name: Upgrade, compare, downgrade and upgrade disposable PostgreSQL
+        run: python scripts/ci_migration_smoke.py
+      - name: Export read-only schema inventory
+        run: >-
+          python scripts/schema_inventory.py
+          --output /tmp/hist-soc-schema-inventory.json
