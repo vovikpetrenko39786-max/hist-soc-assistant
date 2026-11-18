@@ -516,13 +516,17 @@ class NaturalLanguageWorkflowService:
                 continue
 
             files = []
+            if generated.get("status") == "quality_failed":
+                item_warnings.append(
+                    "Материал не прошёл проверку качества и не отправлен как готовый файл."
+                )
             run_id = generated.get("run_id")
             if (
                 request.auto_render
                 and not request.dry_run
                 and plan.formats
                 and run_id
-                and generated.get("status") in {"generated", "quality_failed"}
+                and generated.get("status") == "generated"
             ):
                 audiences = []
                 if item.audience in {"teacher", "both"}:
@@ -571,7 +575,7 @@ class NaturalLanguageWorkflowService:
             })
 
         successful = [x for x in results if x["status"] in {"generated", "dry_run"}]
-        failed = [x for x in results if x["status"] == "failed"]
+        failed = [x for x in results if x["status"] in {"failed", "quality_failed"}]
         if failed and successful:
             status = "partial"
         elif failed and not successful:
