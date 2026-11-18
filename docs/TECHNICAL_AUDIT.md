@@ -71,7 +71,7 @@
 
 ### 3.2. Не проверено
 
-- текущий статус PR №8 в GitHub, title/body, approvals, checks и mergeability: GitHub API вернул `403 Forbidden`; git refs и diff доступны;
+- правила защиты ветки `main` и обязательность проверок при слиянии. Состояние самого PR №8 и результат его CI перепроверены 18 ноября, см. раздел 12;
 - фактическая схема, расширения, индексы, объёмы и целостность production PostgreSQL;
 - наличие и конфигурация production `pgvector`, резервных копий, PITR и успешного restore drill;
 - Railway services, variables, volume mounts, replicas, health checks и журналы;
@@ -258,7 +258,9 @@
 
 ### 12.1. Доступность и отличие от `main`
 
-**Подтверждено.** Git refs PR доступны, поэтому код и diff проверены. PR head находится на 38 коммитов впереди merge-base `main`; diff: 77 файлов, +5 699/−110. PR не объединялся. GitHub metadata/review state не доступны из-за `403`.
+**Подтверждено 18 ноября 2026 года.** GitHub показывает открытый черновик «Integrate PRs #1–7 into a tested release candidate» из ветки `integration/release-candidate-2026-11-14` в `main`. Голова PR — `e3fcb9b`, база — `a5235ce`. Разница составляет 38 коммитов и 77 файлов (+5 699/−110). GitHub сообщает об отсутствии конфликта слияния. Список опубликованных ревью пуст. Проверка «Hist-Soc regression checks» на этом коммите завершилась успешно. [Запуск CI](https://github.com/vovikpetrenko39786-max/hist-soc-assistant/actions/runs/43814534238).
+
+**По отчёту автора PR.** В изолированном staging создан DOCX по синтетическому учебнику и проверена его пагинация. Данные о staging приведены в описании PR. Для проверки прав на реальные учебники, качества уроков в нескольких классах и восстановления фактических рабочих данных нужны отдельные свидетельства.
 
 Ссылки: [PR №8](https://github.com/vovikpetrenko39786-max/hist-soc-assistant/pull/8), [изменения PR](https://github.com/vovikpetrenko39786-max/hist-soc-assistant/pull/8/files), [head-коммит](https://github.com/vovikpetrenko39786-max/hist-soc-assistant/commit/e3fcb9b9c2df94f2f9f7f442a54f504d9455cca8).
 
@@ -342,7 +344,7 @@
 8. Утвердить политику ФИПИ: проект/финал, дата актуальности, запрет выдавать проект за действующую спецификацию.
 9. Утвердить retention/export/delete policy для запросов, отзывов, файлов и Telegram identifiers; провести юридическую проверку персональных данных.
 10. Установить бюджеты LLM/web search, лимиты на пользователя и правило остановки при перерасходе.
-11. Восстановить GitHub API/Actions visibility, проверить branch protection и определить стратегию разбивки PR №8.
+11. Проверить правила защиты `main` и выбрать группы изменений PR №8 для отдельного ревью.
 12. Не передавать секреты в задачи, документацию и логи; при подозрении на прежнюю публикацию выполнить отдельную ротацию.
 
 ## 16. Итоговый go/no-go
@@ -351,4 +353,4 @@
 
 **GO для следующего инженерного этапа:** документация, threat model, миграционный дизайн, локальная/staging-разработка и формирование проверенного учебного корпуса.
 
-**GO для закрытого пилота** возможен только после выполнения обязательных gate из [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md#обязательные-gate-перед-пилотом) и [ACCEPTANCE_TESTS.md](ACCEPTANCE_TESTS.md#итоговый-pilot-gate).
+**Условия допуска к закрытому пилоту** приведены в [разделе 14 дорожной карты](DEVELOPMENT_ROADMAP.md#14-обязательные-gate-перед-пилотом) и [разделе 15 критериев приёмки](ACCEPTANCE_TESTS.md#15-итоговый-pilot-gate).
